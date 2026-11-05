@@ -27,7 +27,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "node --test \"test/*.test.js\"",
+    "test": "node --test",
     "cert": "node scripts/make-cert.js",
     "reset": "node scripts/reset.js",
     "check": "node scripts/check-syntax.js"

@@ -56,7 +56,7 @@ The first run loads sample data: the campus map, a 12 × 15 ft dorm-room map, an
 | `npm start` | Start the server (HTTP on 3000, and HTTPS on 3443 if certs exist) |
 | `npm run dev` | Same, restarting when files change |
 | `npm test` | Run the tests (scoring, geometry, API, OpenStreetMap import) |
-| `npm run check` | Syntax-check every JavaScript file (also runs on GitHub for each push) |
+| `npm run check` | Syntax-check every JavaScript file (GitHub runs this and the tests on Node 20, 22 and 24 for each push) |
 | `npm run cert` | Make HTTPS certificates for the phone compass (see below) |
 | `npm run reset` | Delete all local data. The next start loads the sample again |
 
