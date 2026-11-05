@@ -17,7 +17,7 @@ Free, using GitHub Pages (website) + Supabase (database, Google sign-in, photos)
 
 ## Run it on your computer
 
-You need [Git](https://git-scm.com) and [Node.js](https://nodejs.org) 20 or newer.
+You need [Git](https://git-scm.com) and [Node.js](https://nodejs.org) 22 or newer (the current LTS installer is fine).
 
 ```bash
 cd ~
