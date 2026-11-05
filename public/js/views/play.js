@@ -5,7 +5,7 @@ import { photoUrl } from '../backend.js';
 import { difficultyBadge, headingControl, maxPointsText } from '../components.js';
 import { icon } from '../icons.js';
 import { createMapView } from '../map/index.js';
-import { ensureName, googleButton, session } from '../session.js';
+import { ensureName, session } from '../session.js';
 import { btn, confirmDialog, formatDate, h, toast } from '../ui.js';
 import { rememberResult } from './result.js';
 
@@ -20,16 +20,8 @@ export async function play(root, id) {
 
   // today's round: sign in, have a name, and only once
   if (isToday && round.mine?.played) return location.replace(`#/result/${round.id}`);
-  if (isToday && !session.user) {
-    root.append(h('div', { class: 'empty-state' },
-      icon('user', { size: 40 }), h('h1', {}, 'Sign in to play'),
-      h('p', { class: 'muted' }, 'Today’s round counts for the leaderboard, so it needs an account. Past rounds can be played without one.'),
-      googleButton('Sign in with Google'), btn('Practice on past rounds', { href: '#/archive', class: 'ghost' }),
-      btn('Back', { href: '#/', class: 'ghost' })));
-    document.body.classList.remove('fullscreen');
-    return;
-  }
-  if (isToday && !(await ensureName({ reason: 'Pick the name shown next to your score on the leaderboard.' }))) {
+  const guest = !session.user;
+  if (isToday && !guest && !(await ensureName({ reason: 'Pick the name shown next to your score on the leaderboard.' }))) {
     return location.replace('#/');
   }
 
@@ -45,7 +37,7 @@ export async function play(root, id) {
     h('a', { class: 'icon-btn', href: isToday ? '#/' : '#/archive', 'aria-label': 'Leave round' }, icon('x')),
     h('div', { class: 'overlay-info' },
       h('strong', {}, round.title || (isToday ? 'Today’s round' : formatDate(round.date, session.boot.today))), ' ', difficultyBadge(round.difficulty),
-      h('div', { class: 'small' }, isToday ? `${maxPointsText(round.difficulty)} · one try` : 'Practice round · not on the leaderboard')));
+      h('div', { class: 'small' }, isToday && !guest ? `${maxPointsText(round.difficulty)} · one try` : isToday ? 'Playing as a guest · not saved' : 'Practice round · not on the leaderboard')));
   const photoPane = h('section', { class: 'pane photo-pane' }, scroller, info,
     h('div', { class: 'overlay-bottom' },
       h('span', { class: 'small hint-light' }, icon('zoom', { size: 16 }), ' Tap photo to zoom'),
@@ -83,7 +75,7 @@ export async function play(root, id) {
 
   submit.addEventListener('click', async () => {
     if (!guess.pos) return;
-    if (isToday && !(await confirmDialog('Submit your guess?', 'You get one try at today’s round.', { ok: 'Submit' }))) return;
+    if (isToday && !guest && !(await confirmDialog('Submit your guess?', 'You get one try at today’s round.', { ok: 'Submit' }))) return;
     submit.disabled = true;
     submit.lastChild.textContent = 'Scoring…';
     try {

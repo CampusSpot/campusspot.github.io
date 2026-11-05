@@ -4,7 +4,7 @@ import { photoUrl } from '../backend.js';
 import { difficultyBadge, pageHeader } from '../components.js';
 import { icon } from '../icons.js';
 import { createMapView } from '../map/index.js';
-import { scoring, session } from '../session.js';
+import { googleButton, scoring, session } from '../session.js';
 import { formatLength } from '../units.js';
 import { btn, formatDate, formatTime, h, points, toast } from '../ui.js';
 
@@ -47,7 +47,9 @@ export async function result(root, roundId) {
       h('div', { class: 'total' }, points(g.total)),
       h('div', { class: 'muted' }, `of ${points(g.max)} points`, g.multiplier !== 1 ? ` · ×${g.multiplier} ${cfg.difficulties[round.difficulty]?.label || ''} bonus` : ''),
       g.ranked && rank ? h('div', { class: 'rank-pill' }, `#${rank.place} of ${rank.of} today`) : null,
-      !g.ranked ? h('div', { class: 'small muted' }, isToday ? 'Not ranked: you made this round.' : 'Practice round · not on the leaderboard') : null);
+      !g.ranked && !session.user && isToday ? h('div', { class: 'guest-note' }, 'Played as a guest, so this score isn’t saved. ', googleButton('Sign in with Google'), h('div', { class: 'small muted' }, 'Signed-in players get one ranked try a day.')) : null,
+      !g.ranked && session.user ? h('div', { class: 'small muted' }, isToday ? 'Not ranked: you made this round.' : 'Practice round · not on the leaderboard') : null,
+      !g.ranked && !session.user && !isToday ? h('div', { class: 'small muted' }, 'Practice round · not on the leaderboard') : null);
     stats.replaceChildren(
       h('div', { class: 'stat' },
         h('div', { class: 'stat-head' }, h('span', {}, 'Position'), h('strong', {}, `${points(g.position)}`)),

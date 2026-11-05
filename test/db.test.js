@@ -97,9 +97,12 @@ test('names: rules, blocked words, uniqueness', async () => {
   await db.rpc('set_display_name', { p_name: 'Boss' }, as('admin'));
 });
 
-test("today's round: sign-in and a name required, one try, ranked", async () => {
+test("today's round: guests play unsaved; players need a name, get one ranked try", async () => {
   const guess = { p_round: todayRound.id, p_pos: { lat: 34.0586, lng: -117.8223 }, p_heading: 100 };
-  await rejects(db.rpc('submit_guess', guess), /28000/);
+  const asGuest = await db.rpc('submit_guess', guess);
+  assert.equal(asGuest.guesses[0].id, null, 'guests can play today, but nothing is stored');
+  assert.equal(asGuest.guesses[0].ranked, false);
+  assert.equal(asGuest.rank, null);
   const noName = person('dee', 'dee@example.com');
   await db.ensureUser(noName.id, 'dee@example.com');
   await rejects(db.rpc('submit_guess', guess, as('dee')), /needs_name/);

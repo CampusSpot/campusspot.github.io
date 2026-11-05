@@ -284,8 +284,8 @@ begin
                             'isToday', r.release_date = public.today_local());
 end $$;
 
--- Score a guess. Today's round: signed-in players only, one attempt, goes on the leaderboard
--- (except for the admin who made it). Older rounds: practice, anyone can play, not ranked.
+-- Score a guess. Today's round, signed in: one attempt, goes on the leaderboard (except for the admin
+-- who made it). Guests (any round) and older rounds: scored but not ranked; guests' guesses aren't stored.
 create or replace function public.submit_guess(p_round uuid, p_pos jsonb, p_heading double precision) returns jsonb
 language plpgsql volatile security definer set search_path = public as $$
 declare
@@ -306,10 +306,7 @@ begin
   heading := public.norm360(p_heading);
   select * into a from round_answers where round_id = r.id;
 
-  if is_today then
-    if uid is null then
-      raise exception 'Sign in to play today''s round' using errcode = '28000';
-    end if;
+  if is_today and uid is not null then
     if not exists (select 1 from profiles where user_id = uid) then
       raise exception 'Choose a leaderboard name first' using errcode = 'P0001', hint = 'needs_name';
     end if;

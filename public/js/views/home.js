@@ -32,8 +32,9 @@ export async function home(root) {
         h('div', { class: 'row wrap' }, btn('See your result', { href: `#/result/${today.id}`, class: 'primary' }), btn('Leaderboard', { href: '#/leaderboard' }))]
       : signedIn
         ? [btn('Play', { href: '#/play/today', class: 'primary big' })]
-        : [googleButton('Sign in with Google'),
-          h('p', { class: 'small muted' }, 'Sign in to play and get on the leaderboard, or ', h('a', { href: '#/archive' }, 'practice on past photos'), '.')];
+        : [btn('Play', { href: '#/play/today', class: 'primary big' }),
+          h('p', { class: 'small muted' }, 'Playing as a guest won’t be saved. Sign in to keep your score and get on the leaderboard.'),
+          googleButton('Sign in with Google')];
     hero = h('section', { class: 'hero' },
       h('img', { class: 'hero-photo', src: photoUrl(today.photoPath), alt: '' }),
       h('div', { class: 'hero-body' },
