@@ -11,7 +11,7 @@ export async function adminMaps(root, id) {
   const maps = await api.maps();
   const source = (id && maps.find(x => x.id === id)) || maps[0];
   if (!source) {
-    root.append(adminNav(), pageHeader('Map'), card(h('p', { class: 'muted' }, 'No map found. Run supabase/setup.sql again to add the campus map.')));
+    root.append(adminNav(), pageHeader('Map'), card(h('p', { class: 'muted' }, 'No map found. Re-run the database setup script to add the campus map.')));
     return;
   }
   const m = structuredClone(source);

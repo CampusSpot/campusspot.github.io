@@ -5,7 +5,7 @@ const config = window.POLYSPOT_CONFIG || {};
 const local = window.POLYSPOT_LOCAL;
 
 /** 'live' (Supabase), 'local' (npm start, test database) or 'unconfigured' (published without Supabase yet) */
-export const mode = config.supabaseUrl ? 'live' : local?.local ? 'local' : 'unconfigured';
+export const mode = local?.local ? 'local' : config.supabaseUrl ? 'live' : 'unconfigured';
 export const siteConfig = config;
 export const localInfo = local;
 

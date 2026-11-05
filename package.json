@@ -11,13 +11,13 @@
     "campus",
     "cal-poly-pomona"
   ],
-  "homepage": "https://github.com/Rassa1/broncoguesser#readme",
+  "homepage": "https://github.com/Rassa1/PolySpot#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Rassa1/broncoguesser.git"
+    "url": "git+https://github.com/Rassa1/PolySpot.git"
   },
   "bugs": {
-    "url": "https://github.com/Rassa1/broncoguesser/issues"
+    "url": "https://github.com/Rassa1/PolySpot/issues"
   },
   "license": "MIT",
   "type": "module",
@@ -31,8 +31,7 @@
     "test": "node --test",
     "check": "node scripts/check-syntax.js",
     "build:sql": "node scripts/build-sql.js",
-    "vendor": "node scripts/vendor.js",
-    "cert": "node scripts/make-cert.js"
+    "vendor": "node scripts/vendor.js"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.15"

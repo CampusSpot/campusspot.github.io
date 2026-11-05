@@ -27,16 +27,37 @@ export async function refreshSession() {
   listeners.forEach(fn => fn(session));
 }
 
+/** A sign-in error handed back in the address (after "?" or "#"), or null. */
+function signInErrorFromUrl() {
+  const query = new URLSearchParams(location.search);
+  const hash = new URLSearchParams(location.hash.replace(/^#\/?/, ''));
+  const src = query.has('error') ? query : hash.has('error') ? hash : null;
+  return src && { code: src.get('error_code') || src.get('error'), message: src.get('error_description') || src.get('error') };
+}
+
+function showSignInProblem(problem) {
+  console.error('Sign-in failed:', problem);
+  modal(close => [
+    h('h2', {}, 'Sign-in didn’t work'),
+    h('p', { class: 'muted' }, problem.code === 'access_denied' ? 'Google sign-in was cancelled or not allowed for this account.' : 'Something went wrong while signing in.'),
+    h('pre', { class: 'error-detail' }, problem.message || problem.code || 'Unknown error'),
+    h('div', { class: 'row end' }, btn('Close', { class: 'ghost', onclick: () => close() }), btn('Try again', { class: 'primary', onclick: () => { close(); signIn(); } })),
+  ], { label: 'Sign-in problem' });
+}
+
 export async function initSession() {
   if (!sb) return;
   const params = new URLSearchParams(location.search);
+  const urlError = signInErrorFromUrl();
   const returnTo = sessionStorage.getItem('polyspot.return');
-  await sb.auth.getSession(); // finishes a Google sign-in when we're coming back from it (?code=…)
-  if (params.has('code') || params.has('error')) {
-    history.replaceState(null, '', location.pathname + (returnTo || location.hash || '#/'));
+  // Finishes a Google sign-in when we're coming back from it (?code=…).
+  const { error: exchangeError } = await sb.auth.initialize();
+  if (params.has('code') || urlError) {
+    history.replaceState(null, '', location.pathname + (returnTo || '#/'));
     sessionStorage.removeItem('polyspot.return');
-    if (params.has('error')) setTimeout(() => toast(params.get('error_description') || 'Sign-in was cancelled', 'error'), 300);
   }
+  const problem = urlError || (params.has('code') && exchangeError ? { code: exchangeError.code, message: exchangeError.message } : null);
+  if (problem) setTimeout(() => showSignInProblem(problem), 300);
   await refreshSession();
   sb.auth.onAuthStateChange(event => {
     if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') setTimeout(() => refreshSession().catch(console.error), 0);
@@ -51,7 +72,7 @@ export async function signIn() {
       provider: 'google',
       options: { redirectTo: location.origin + location.pathname, queryParams: { prompt: 'select_account' } },
     });
-    if (error) toast(error.message, 'error');
+    if (error) showSignInProblem({ code: error.code, message: error.message });
     return false; // the page navigates away
   }
   const admins = window.POLYSPOT_LOCAL?.adminEmails || [];

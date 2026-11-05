@@ -6,11 +6,7 @@
 //     except map images.
 //   Live mode (public/config.js has your Supabase project): just serves the site files; data,
 //     Google sign-in and photos come from Supabase, exactly like the published site.
-//
-// HTTPS on HTTPS_PORT (default 3443) as well, if certs/cert.pem + certs/key.pem exist (npm run cert):
-// phones only allow the compass on HTTPS.
 import http from 'node:http';
-import https from 'node:https';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -20,10 +16,7 @@ const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(ROOT, 'public');
 const HOST = process.env.HOST || '0.0.0.0';
 const PORT = Number(process.env.PORT) || 3000;
-const HTTPS_PORT = Number(process.env.HTTPS_PORT) || 3443;
 const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(ROOT, 'data'));
-const CERT = process.env.HTTPS_CERT || path.join(ROOT, 'certs', 'cert.pem');
-const KEY = process.env.HTTPS_KEY || path.join(ROOT, 'certs', 'key.pem');
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'admin@example.com').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 
 const configText = fs.readFileSync(path.join(PUBLIC_DIR, 'config.js'), 'utf8');
@@ -53,11 +46,7 @@ function serveStatic(res, pathname) {
 }
 
 const ips = lanAddresses();
-const hasCerts = fs.existsSync(CERT) && fs.existsSync(KEY);
-const urls = {
-  http: ips.map(ip => `http://${ip}:${PORT}`),
-  https: hasCerts ? ips.map(ip => `https://${ip}:${HTTPS_PORT}`) : [],
-};
+const urls = { http: ips.map(ip => `http://${ip}:${PORT}`) };
 
 let emulator = null;
 if (LOCAL) {
@@ -87,7 +76,7 @@ async function handle(req, res) {
 }
 
 const onError = port => err => {
-  console.error(err.code === 'EADDRINUSE' ? `Port ${port} is already in use: an older PolySpot is probably still running. Stop it (see README → Troubleshooting) or use PORT=3001 npm start` : err);
+  console.error(err.code === 'EADDRINUSE' ? `Port ${port} is already in use: an older PolySpot is probably still running. Stop it, or use another port: PORT=3001 npm start` : err);
   process.exit(1);
 };
 
@@ -99,11 +88,6 @@ http.createServer(handle).on('error', onError(PORT)).listen(PORT, HOST, () => {
     `  On this computer: http://localhost:${PORT}`,
     ...urls.http.map((u, i) => `  ${i ? '                  ' : 'On your phone:    '}${u}   (same Wi-Fi)`),
   ];
-  if (hasCerts) urls.https.forEach((u, i) => lines.push(`  ${i ? '                  ' : 'HTTPS (compass):  '}${u}`));
   if (LOCAL) lines.push('', `  Admin sign-in for testing: ${ADMIN_EMAILS.join(', ')} (any other email = normal player)`, `  Data: ${DATA_DIR}`);
   console.log([...lines, ''].join('\n'));
 });
-
-if (hasCerts) {
-  https.createServer({ cert: fs.readFileSync(CERT), key: fs.readFileSync(KEY) }, handle).on('error', onError(HTTPS_PORT)).listen(HTTPS_PORT, HOST);
-}

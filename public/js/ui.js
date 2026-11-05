@@ -28,9 +28,10 @@ export function h(tag, props, ...children) {
   return el;
 }
 
-/** Button with an icon: btn('Play', { icon: 'play', class: 'primary', onclick }) */
+/** btn('Play', { class: 'primary', onclick }). Text buttons are text only; `icon` is drawn when there's no label. */
 export function btn(label, { icon: name, class: cls = '', href, ...props } = {}) {
-  const kids = [name ? icon(name) : null, label ? h('span', {}, label) : null];
+  const kids = label ? [h('span', {}, label)] : [icon(name), null];
+  if (!label) cls += ' icon-only';
   return href
     ? h('a', { class: `btn ${cls}`, href, ...props }, kids)
     : h('button', { type: 'button', class: `btn ${cls}`, ...props }, kids);

@@ -51,7 +51,7 @@ const tabbar = h('nav', { class: 'tabbar', 'aria-label': 'Main' });
 const view = h('main', { id: 'view', class: 'view', tabindex: '-1' });
 document.getElementById('app').replaceChildren(
   h('header', { class: 'topbar' },
-    h('a', { class: 'brand', href: '#/' }, h('span', { class: 'brand-mark', 'aria-hidden': 'true' }), h('span', {}, 'PolySpot')),
+    h('a', { class: 'brand', href: '#/', 'aria-label': 'PolySpot home' }, h('span', { class: 'brand-mark', 'aria-hidden': 'true' }), h('span', { class: 'wordmark' }, 'PolySpot')),
     accountSlot),
   view,
   tabbar);

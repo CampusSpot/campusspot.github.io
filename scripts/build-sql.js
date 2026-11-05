@@ -1,6 +1,5 @@
-// Builds supabase/setup.sql — the one file you paste into Supabase's SQL editor — from schema.sql,
-// storage.sql, the scoring settings and the default campus map.
-// Run after changing public/shared/scoring.config.js or anything in supabase/:  npm run build:sql
+// Builds supabase/setup.sql (not committed): the one file to paste into Supabase's SQL editor, made
+// from schema.sql, storage.sql, the scoring settings and the default campus map.  npm run build:sql
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import scoring from '../public/shared/scoring.config.js';

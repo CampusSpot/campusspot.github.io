@@ -1,5 +1,4 @@
 data/
-certs/*.pem
 
 # OS / editor clutter
 .DS_Store
@@ -8,3 +7,4 @@ Thumbs.db
 .vscode/
 .idea/
 node_modules/
+supabase/setup.sql

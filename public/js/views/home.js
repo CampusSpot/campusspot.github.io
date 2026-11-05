@@ -1,9 +1,8 @@
 // Home: today's round, your result, a peek at today's leaderboard, and how to play.
 import { api } from '../api.js';
 import { localInfo, photoUrl } from '../backend.js';
-import { difficultyBadge, leaderboardList, maxPointsText, qrBox } from '../components.js';
-import { icon } from '../icons.js';
-import { googleButton, session } from '../session.js';
+import { leaderboardList, maxPointsText, qrBox } from '../components.js';
+import { googleButton, scoring, session } from '../session.js';
 import { btn, formatDuration, h, msUntilMidnight, points } from '../ui.js';
 
 function countdown() {
@@ -14,53 +13,57 @@ function countdown() {
   return { el, stop: () => clearInterval(timer) };
 }
 
+const longDate = ymd => {
+  const [y, m, d] = ymd.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+};
+
 export async function home(root) {
   const [today, board] = await Promise.all([api.today(), api.leaderboardRound().catch(() => ({ rows: [] }))]);
   const next = countdown();
   const signedIn = !!session.user;
   const played = today?.mine?.played;
+  const label = scoring().difficulties[today?.difficulty]?.label;
 
   let hero;
   if (today) {
     const action = played
-      ? [h('p', { class: 'hero-score' }, h('strong', {}, points(today.mine.best)), ' points today'),
-        h('div', { class: 'row wrap' }, btn('See your result', { href: `#/result/${today.id}`, icon: 'check', class: 'primary' }),
-          btn('Leaderboard', { href: '#/leaderboard', icon: 'trophy' }))]
+      ? [h('p', { class: 'hero-score' }, h('strong', {}, points(today.mine.best)), ' points'),
+        h('div', { class: 'row wrap' }, btn('See your result', { href: `#/result/${today.id}`, class: 'primary' }), btn('Leaderboard', { href: '#/leaderboard' }))]
       : signedIn
-        ? [btn('Play today’s round', { href: '#/play/today', icon: 'play', class: 'primary big' })]
-        : [h('p', { class: 'small hero-note' }, 'Sign in to play today’s round and get on the leaderboard.'), googleButton('Sign in with Google'),
-          h('a', { class: 'small hero-alt', href: '#/archive' }, 'or practice on past rounds without signing in')];
+        ? [btn('Play', { href: '#/play/today', class: 'primary big' })]
+        : [googleButton('Sign in with Google'),
+          h('p', { class: 'small muted' }, 'Sign in to play and get on the leaderboard, or ', h('a', { href: '#/archive' }, 'practice on past photos'), '.')];
     hero = h('section', { class: 'hero' },
-      h('div', { class: 'hero-photo' },
-        h('img', { src: photoUrl(today.photoPath), alt: '', class: played ? '' : 'veiled' }),
-        h('div', { class: 'hero-badges' }, h('span', { class: 'badge solid' }, 'Today'), difficultyBadge(today.difficulty))),
+      h('img', { class: 'hero-photo', src: photoUrl(today.photoPath), alt: '' }),
       h('div', { class: 'hero-body' },
-        h('h1', {}, today.title || 'Today’s round'),
-        h('p', { class: 'muted small' }, `${today.plays} player${today.plays === 1 ? '' : 's'} so far · ${maxPointsText(today.difficulty)}`),
+        h('p', { class: 'overline' }, longDate(today.date)),
+        h('h1', {}, today.title || 'Where was this taken?'),
+        h('p', { class: 'meta' }, [label, `${today.plays} played`, maxPointsText(today.difficulty)].filter(Boolean).join('  ·  ')),
         ...action));
   } else {
     hero = h('section', { class: 'hero empty' },
       h('div', { class: 'hero-body' },
-        icon('clock', { size: 36 }),
-        h('h1', {}, 'No round today'),
-        h('p', { class: 'muted' }, 'A new photo usually drops at midnight. Meanwhile, try a past round.'),
-        btn('Past rounds', { href: '#/archive', icon: 'calendar', class: 'primary' })));
+        h('p', { class: 'overline' }, session.boot.today ? longDate(session.boot.today) : 'Today'),
+        h('h1', {}, 'No photo today'),
+        h('p', { class: 'muted' }, 'New photos go up at midnight. Try a past one in the meantime.'),
+        btn('Past photos', { href: '#/archive', class: 'primary' })));
   }
 
   const howTo = h('details', { class: 'card how', open: !signedIn && !played },
-    h('summary', {}, icon('info'), h('span', {}, 'How to play')),
+    h('summary', {}, 'How to play'),
     h('ol', { class: 'steps' },
-      h('li', {}, h('strong', {}, 'Look at the photo. '), 'It was taken somewhere on campus.'),
-      h('li', {}, h('strong', {}, 'Tap the map '), 'where you think the photographer stood.'),
-      h('li', {}, h('strong', {}, 'Aim the arrow '), 'the way the camera was facing, then submit.'),
-      h('li', {}, h('strong', {}, 'Score up to 10,000: '), '5,000 for the spot, 5,000 for the direction. One try per day.')));
+      h('li', {}, 'Look at the photo. It was taken somewhere on campus.'),
+      h('li', {}, 'Tap the map where you think the photographer stood.'),
+      h('li', {}, 'Drag the ring to aim the way the camera was facing, then submit.'),
+      h('li', {}, 'Up to 5,000 points for the spot and 5,000 for the direction. One try a day.')));
 
   root.append(
     hero,
-    h('p', { class: 'next-round muted small' }, icon('clock', { size: 16 }), ' Next round in ', next.el),
+    h('p', { class: 'next-round' }, 'Next photo in ', next.el),
     h('section', { class: 'card' },
-      h('div', { class: 'row between' }, h('h2', {}, 'Today’s top players'), h('a', { class: 'small', href: '#/leaderboard' }, 'Full leaderboard')),
-      leaderboardList((board.rows || []).slice(0, 5), { empty: today ? 'Be the first on the board today.' : 'No round today.' })),
+      h('div', { class: 'section-head' }, h('h2', {}, 'Today’s top 5'), h('a', { href: '#/leaderboard' }, 'Leaderboard')),
+      leaderboardList((board.rows || []).slice(0, 5), { empty: today ? 'No scores yet today.' : 'No photo today.' })),
     howTo,
     phoneCard(),
     footer());
@@ -89,5 +92,5 @@ export function setupNeeded(root) {
   root.append(h('div', { class: 'empty-state' },
     h('span', { class: 'brand-mark big', 'aria-hidden': 'true' }),
     h('h1', {}, 'PolySpot is almost ready'),
-    h('p', { class: 'muted' }, 'This site isn’t connected to its database yet. If you run it, follow docs/SETUP.md and fill in public/config.js.')));
+    h('p', { class: 'muted' }, 'The game isn’t connected to its database yet. Check back soon.')));
 }

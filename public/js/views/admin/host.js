@@ -1,7 +1,7 @@
 // Admin: make a new round. Photo → where it was taken + camera direction → difficulty → release date.
 import { api } from '../../api.js';
 import { deletePhoto, photoUrl, uploadPhoto } from '../../backend.js';
-import { card, compassControl, difficultyPicker, headingControl, maxPointsText, pageHeader } from '../../components.js';
+import { card, difficultyPicker, headingControl, maxPointsText, pageHeader } from '../../components.js';
 import { icon } from '../../icons.js';
 import { createMapView } from '../../map/index.js';
 import { dataUrlToBytes, fileToJpeg } from '../../photo.js';
@@ -37,10 +37,6 @@ export async function adminHost(root) {
   const box = h('div', { class: 'map-box' });
   const hint = h('p', { class: 'hint' });
   const heading = headingControl({ value: 0, onInput: deg => { state.heading = deg; editor.set({ heading: deg }); } });
-  const compass = compassControl({
-    onHeading: deg => { state.heading = deg; heading.set(deg); editor.set({ heading: deg }); },
-  });
-  const compassNote = h('p', { class: 'small muted' }, 'Hold the phone the way you took the photo; north is up on the map, so the reading is used as-is.');
   const mapSelect = maps.length > 1
     ? h('select', { 'aria-label': 'Map', onchange: e => useMap(maps.find(m => m.id === e.target.value)) },
       maps.map(m => h('option', { value: m.id, selected: m.id === state.map.id }, m.name)))
@@ -85,7 +81,6 @@ export async function adminHost(root) {
     const photoPath = `${crypto.randomUUID()}.jpg`; // random name: scheduled photos can't be guessed
     let uploaded = false;
     try {
-      compass.stop();
       const bytes = dataUrlToBytes(state.photo);
       await uploadPhoto(photoPath, bytes, 'image/jpeg');
       uploaded = true;
@@ -126,7 +121,7 @@ export async function adminHost(root) {
       camInput, fileInput, preview),
     card(h('h2', {}, '2. Where was it taken?'), mapSelect, hint),
     box,
-    card(h('h2', {}, 'Camera direction'), heading.el, compass.el, compassNote),
+    card(h('h2', {}, 'Camera direction'), heading.el),
     card(h('h2', {}, '3. Difficulty'), difficulty.el, maxText),
     card(
       h('h2', {}, '4. Release'),
@@ -136,5 +131,5 @@ export async function adminHost(root) {
     h('div', { class: 'sticky-actions' }, saveBtn),
   );
   useMap(state.map);
-  return () => { compass.stop(); view?.destroy(); };
+  return () => view?.destroy();
 }

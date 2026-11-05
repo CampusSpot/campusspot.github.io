@@ -46,15 +46,15 @@ export async function result(root, roundId) {
     hero.replaceChildren(
       h('div', { class: 'total' }, points(g.total)),
       h('div', { class: 'muted' }, `of ${points(g.max)} points`, g.multiplier !== 1 ? ` · ×${g.multiplier} ${cfg.difficulties[round.difficulty]?.label || ''} bonus` : ''),
-      g.ranked && rank ? h('div', { class: 'rank-pill' }, icon('trophy', { size: 16 }), ` #${rank.place} of ${rank.of} today`) : null,
+      g.ranked && rank ? h('div', { class: 'rank-pill' }, `#${rank.place} of ${rank.of} today`) : null,
       !g.ranked ? h('div', { class: 'small muted' }, isToday ? 'Not ranked: you made this round.' : 'Practice round · not on the leaderboard') : null);
     stats.replaceChildren(
       h('div', { class: 'stat' },
-        h('div', { class: 'stat-head' }, h('span', {}, icon('pin', { size: 18 }), ' Position'), h('strong', {}, `${points(g.position)}`)),
+        h('div', { class: 'stat-head' }, h('span', {}, 'Position'), h('strong', {}, `${points(g.position)}`)),
         bar(g.position, cfg.position.max, 'pos'),
         h('div', { class: 'small muted' }, `${formatLength(g.distance, map.units)} away`)),
       h('div', { class: 'stat' },
-        h('div', { class: 'stat-head' }, h('span', {}, icon('compass', { size: 18 }), ' Direction'), h('strong', {}, `${points(g.direction)}`)),
+        h('div', { class: 'stat-head' }, h('span', {}, 'Direction'), h('strong', {}, `${points(g.direction)}`)),
         bar(g.direction, cfg.direction.max, 'dir'),
         h('div', { class: 'small muted' }, `${Math.round(g.angleError)}° off · you ${Math.round(g.heading)}°, actual ${Math.round(truth.heading)}°`)));
     renderHistory();

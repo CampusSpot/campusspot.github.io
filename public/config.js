@@ -1,5 +1,5 @@
 // ─── Site settings ──────────────────────────────────────────────────────────────────────────────
-// Fill these in after creating your Supabase project (see docs/SETUP.md). They are safe to publish:
+// Your Supabase project. These two values are safe to publish:
 // the publishable key only allows what the database rules allow. NEVER put a secret key
 // (sb_secret_… or the old "service_role" key) here, or anywhere in this repository.
 window.POLYSPOT_CONFIG = {
@@ -9,7 +9,7 @@ window.POLYSPOT_CONFIG = {
   supabaseAnonKey: 'sb_publishable_duvOxOQFHo3wda8-0KcdAg_TV4usEnS',
   // Shown in the privacy policy and terms as the way to reach you.
   contactEmail: 'rassa.wood@gmail.com',
-  // Optional: free ArcGIS Location Platform API key for sharper satellite imagery (see README → Legal).
+  // Optional: ArcGIS Location Platform API key for sharper satellite imagery (see THIRD_PARTY_NOTICES.md).
   // Restrict it to your site's address in the ArcGIS dashboard.
   esriApiKey: '',
 };

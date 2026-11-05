@@ -1,5 +1,5 @@
 // Admin: players and their leaderboard names. Hide a name to take it off the leaderboard; the
-// player is asked to choose a new one. Admins themselves are managed in Supabase (see docs/SETUP.md).
+// player is asked to choose a new one. Admins themselves are managed in the Supabase SQL editor (public.admins).
 import { api } from '../../api.js';
 import { pageHeader } from '../../components.js';
 import { icon } from '../../icons.js';
@@ -36,6 +36,6 @@ export async function adminPlayers(root) {
     h('section', { class: 'card' },
       h('h2', {}, icon('shield', { size: 18 }), ' Admins'),
       h('ul', { class: 'plain' }, admins.map(a => h('li', {}, a))),
-      h('p', { class: 'small muted' }, 'To add or remove an admin, run one line in Supabase → SQL Editor (see docs/SETUP.md). Keep it to one or two people.')),
+      h('p', { class: 'small muted' }, 'Admins are managed in Supabase (the public.admins table). Keep it to one or two people.')),
   );
 }

@@ -2,7 +2,6 @@
 import { norm360 } from '../shared/geo.js';
 import { maxScore } from '../shared/scoring.js';
 import { photoUrl } from './backend.js';
-import { startCompass } from './compass.js';
 import { icon } from './icons.js';
 import { scoring, session } from './session.js';
 import { formatDate, h, points } from './ui.js';
@@ -73,38 +72,6 @@ export function difficultyPicker({ value, onChange }) {
   return { el, get: () => value };
 }
 
-/** "Use phone compass" button. While live, onHeading(deg) fires as the phone turns; tap again to lock. */
-export function compassControl({ label = 'Use phone compass', onHeading, onStop }) {
-  let stop = null;
-  const text = h('span', {}, label);
-  const button = h('button', { type: 'button', class: 'btn' }, icon('compass'), text);
-  const status = h('p', { class: 'small muted', 'aria-live': 'polite' });
-  const end = () => { stop?.(); stop = null; text.textContent = label; button.classList.remove('live'); };
-
-  button.addEventListener('click', () => {
-    if (stop) { end(); status.textContent = 'Direction locked. Fine-tune it with the slider if needed.'; onStop?.(); return; }
-    status.textContent = 'Starting compass…';
-    startCompass(deg => {
-      status.textContent = `Facing ${deg}°. Hold the phone the way you took the photo, then tap Lock.`;
-      onHeading(deg);
-    }).then(s => {
-      stop = s;
-      text.textContent = 'Lock direction';
-      button.classList.add('live');
-    }).catch(err => {
-      status.replaceChildren(err.message);
-      if (!window.isSecureContext) {
-        const httpsUrl = window.POLYSPOT_LOCAL?.urls?.https?.find(u => u.includes(location.hostname));
-        status.append(' ', httpsUrl
-          ? h('a', { href: httpsUrl + location.pathname + location.hash }, 'Open the HTTPS version')
-          : 'On the published site (https) this works automatically.',
-        ' You can always set the direction by hand.');
-      }
-    });
-  });
-  return { el: h('div', { class: 'compass' }, button, status), stop: end };
-}
-
 /** QR code for a link (shown on the computer so a phone can open the local copy). */
 export function qrBox(url) {
   const box = h('div', { class: 'qr', role: 'img', 'aria-label': `QR code for ${url}` });
@@ -121,8 +88,8 @@ export function qrBox(url) {
 export function leaderboardList(rows, { columns = 'round', empty = 'No scores yet.' } = {}) {
   if (!rows.length) return h('p', { class: 'muted empty' }, empty);
   return h('ol', { class: 'board' }, rows.map(r => h('li', { class: r.me ? 'me' : '' },
-    h('span', { class: `place p${r.place}` }, r.place <= 3 ? ['🥇', '🥈', '🥉'][r.place - 1] : r.place),
-    h('span', { class: 'who' }, r.name, r.me ? h('span', { class: 'you' }, 'you') : null),
+    h('span', { class: `place p${r.place}` }, r.place),
+    h('span', { class: 'who' }, r.name, r.me ? h('span', { class: 'you' }, 'You') : null),
     columns === 'round'
       ? h('span', { class: 'detail' }, `${formatDistance(r.distance)} · ${Math.round(r.angleError)}°`)
       : h('span', { class: 'detail' }, `${r.rounds} round${r.rounds === 1 ? '' : 's'} · avg ${points(r.average)}`),

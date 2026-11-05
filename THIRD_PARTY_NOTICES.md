@@ -40,10 +40,10 @@ This is a good-faith summary for a free, non-commercial student project, not leg
 - **If PolySpot grows** past a small campus game, or makes money, move off OpenStreetMap's tile server and Esri's free tier to a paid or self-hosted provider, and upgrade Supabase if you hit its limits.
 
 ## Names and trademarks
-- **Cal Poly Pomona:** the name only describes where the game is played. PolySpot is an independent student project. It is **not affiliated with, sponsored by, or endorsed by** California State Polytechnic University, Pomona or the California State University, and it uses no university logos or marks. Keep university names and marks out of any domain name.
+- **Cal Poly Pomona:** the name only describes where the game is played. PolySpot is an independent student project. It is **not affiliated with, sponsored by, or endorsed by** California State Polytechnic University, Pomona or the California State University, and it uses no university logos or marks.
 - **GeoGuessr:** PolySpot is inspired by photo-location guessing games. It is not affiliated with GeoGuessr AB and uses none of its code, art or content.
 - **"PolySpot":** a quick search found an older U.S. registration for the word "POLYSPOT" by an unrelated wifi company, in different product classes, reported as no longer active. That's low risk for a free campus game. Search [USPTO](https://tmsearch.uspto.gov) before any commercial use or registration of your own.
 
 ## Photos and players
 - Round photos are taken by the admins and belong to them. Players' names, guesses and scores are stored as described in the in-app privacy policy (`#/privacy`), and players can delete them at any time.
-- Admins should follow the photo rules in the README: no identifiable people without consent, no ID cards, license plates or room numbers, no closed areas, and take a photo down if asked.
+- Round photos avoid identifiable people (unless they agreed), ID cards, license plates and room numbers, and are never taken in closed areas. Admins take a photo down if asked.
