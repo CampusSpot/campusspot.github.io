@@ -14,12 +14,26 @@ It runs on your laptop, and your phone can play it over the same Wi-Fi. There ar
 
 ## Run it
 
-You need [Node.js](https://nodejs.org) 20 or newer. There are no dependencies, so you don't need `npm install`.
+You need [Git](https://git-scm.com) and [Node.js](https://nodejs.org) 20 or newer. There are no dependencies, so you don't need `npm install`.
+
+First time (any terminal; on Windows, PowerShell):
 
 ```bash
+cd ~
+git clone https://github.com/Rassa1/polyspot.git
 cd polyspot
 npm start
 ```
+
+After that, to update and run:
+
+```bash
+cd ~/polyspot
+git pull
+npm start
+```
+
+Press **Ctrl+C** to stop the server. Stop it before starting a new one, or the old version keeps running on port 3000.
 
 ```
   PolySpot is running
@@ -31,7 +45,7 @@ npm start
 - **Laptop:** open `http://localhost:3000`.
 - **Phone:** join the same Wi-Fi as the laptop and open the "On your phone" address. You can also scan the QR code shown on the laptop's home page.
 
-The first run loads sample data: the campus map, a 12 × 15 ft dorm-room map, and one sample round in the dorm dated today. On start, the server also fetches campus building names from OpenStreetMap (it prints `Loaded N building/place names…`). If the laptop was offline, it retries on the next start, or you can use **Edit map → Import building names**.
+The first run loads sample data: the campus map, a 12 × 15 ft dorm-room map, and a practice round in the dorm (under **All rounds**). On start, the server also fetches campus building names from OpenStreetMap (it prints `Loaded N building/place names…`). If the laptop was offline, it retries on the next start, or you can use **Edit map → Import building names**.
 
 | Command | What it does |
 |---|---|
