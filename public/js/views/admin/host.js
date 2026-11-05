@@ -38,10 +38,9 @@ export async function adminHost(root) {
   const hint = h('p', { class: 'hint' });
   const heading = headingControl({ value: 0, onInput: deg => { state.heading = deg; editor.set({ heading: deg }); } });
   const compass = compassControl({
-    offset: () => state.map.topBearing ?? 0,
     onHeading: deg => { state.heading = deg; heading.set(deg); editor.set({ heading: deg }); },
   });
-  const compassNote = h('p', { class: 'small muted' });
+  const compassNote = h('p', { class: 'small muted' }, 'Hold the phone the way you took the photo; north is up on the map, so the reading is used as-is.');
   const mapSelect = maps.length > 1
     ? h('select', { 'aria-label': 'Map', onchange: e => useMap(maps.find(m => m.id === e.target.value)) },
       maps.map(m => h('option', { value: m.id, selected: m.id === state.map.id }, m.name)))
@@ -62,11 +61,6 @@ export async function adminHost(root) {
         hint.textContent = view.hints.adjust;
       },
     });
-    compassNote.textContent = map.type === 'latlng'
-      ? 'North is up on this map, so compass readings are used as they are.'
-      : map.topBearing == null
-        ? 'Compass assumes the top of this floor plan faces north. Set the real direction under Maps → Compass alignment.'
-        : `Top of this map faces ${Math.round(map.topBearing)}°.`;
   }
 
   // 3–4. difficulty, date, title

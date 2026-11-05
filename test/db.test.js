@@ -62,7 +62,7 @@ test('only admins can create rounds and use admin tools', async () => {
   await rejects(db.rpc('admin_create_round', { p: { mapId: 'campus' } }, as('ana')), /42501/);
   await rejects(db.rpc('admin_create_round', { p: { mapId: 'campus' } }), /42501|permission denied/);
   await rejects(db.rpc('admin_players', {}, as('fake')), /42501/);
-  await rejects(db.rpc('admin_save_map', { p_map: { type: 'floorplan', width: 3, length: 4 } }, as('ben')), /42501/);
+  await rejects(db.rpc('admin_save_map', { p_map: { name: 'x' } }, as('ben')), /42501/);
   todayRound = await newRound(today);
   pastRound = await newRound(yesterday, { difficulty: 'night' });
   futureRound = await newRound(tomorrow);
@@ -174,11 +174,13 @@ test('leaderboards: order, me flag, hidden names, overall totals', async () => {
 });
 
 test('admin: maps are validated, rounds can be edited and deleted', async () => {
-  const room = await db.rpc('admin_save_map', { p_map: {
-    type: 'floorplan', name: 'Lab <b>', width: 10, length: 6, features: [{ label: 'Door', pos: { x: 50, y: 2 } }, { label: 'bad', pos: { lat: 1, lng: 2 } }],
+  const area = await db.rpc('admin_save_map', { p_map: {
+    name: 'North campus', bounds: { sw: { lat: 34.05, lng: -117.83 }, ne: { lat: 34.06, lng: -117.82 } },
+    features: [{ label: 'Fountain', pos: { lat: 40, lng: -117.825 } }, { label: 'bad', pos: { x: 1, y: 2 } }],
   } }, as('admin'));
-  assert.deepEqual(room.features.map(f => f.pos), [{ x: 10, y: 2 }]);
-  await rejects(db.rpc('admin_save_map', { p_map: { type: 'floorplan', width: 0, length: 3 } }, as('admin')), /Width/);
+  assert.equal(area.type, 'latlng');
+  assert.deepEqual(area.features.map(f => f.pos), [{ lat: 34.06, lng: -117.825 }], 'labels are kept inside, malformed ones dropped');
+  await rejects(db.rpc('admin_save_map', { p_map: { bounds: { sw: { lat: 34.06, lng: -117.82 }, ne: { lat: 34.05, lng: -117.83 } } } }, as('admin')), /Invalid play area/);
   await rejects(db.rpc('admin_save_map', { p_map: { type: 'latlng', bounds: { sw: { lat: 30, lng: -120 }, ne: { lat: 35, lng: -110 } } } }, as('admin')), /too big/);
   const campus = (await db.rpc('get_maps')).find(m => m.id === 'campus');
   const relabeled = await db.rpc('admin_save_map', { p_map: { ...campus, features: [{ label: 'Library', kind: 'building', source: 'osm', pos: { lat: 34.0577, lng: -117.8223 } }] } }, as('admin'));
@@ -204,16 +206,16 @@ test('delete my account removes my name and scores', async () => {
 
 test('SQL scoring matches the JavaScript scoring', async () => {
   const cfg = (await db.rpc('get_bootstrap')).scoring;
-  const room = { type: 'floorplan', width: 3.6576, length: 4.572 };
   const campus = (await db.rpc('get_maps')).find(m => m.id === 'campus');
+  // a tiny play area too (about 200 m), where small distances swing the score a lot
+  const small = { type: 'latlng', bounds: { sw: { lat: 34.0570, lng: -117.8230 }, ne: { lat: 34.0585, lng: -117.8210 } } };
   let seed = 7;
   const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   const cases = [];
   for (let i = 0; i < 60; i++) {
-    const map = i % 2 ? room : campus;
-    const pt = () => (map.type === 'floorplan'
-      ? { x: rand() * map.width, y: rand() * map.length }
-      : { lat: 34.048 + rand() * 0.018, lng: -117.832 + rand() * 0.024 });
+    const map = i % 2 ? small : campus;
+    const { sw, ne } = map.bounds;
+    const pt = () => ({ lat: sw.lat + rand() * (ne.lat - sw.lat), lng: sw.lng + rand() * (ne.lng - sw.lng) });
     cases.push({ map, difficulty: Object.keys(cfg.difficulties)[i % 4], truth: { pos: pt(), heading: rand() * 360 }, guess: { pos: pt(), heading: rand() * 720 - 360 } });
   }
   for (const c of cases) {

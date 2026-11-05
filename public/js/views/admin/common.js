@@ -5,7 +5,7 @@ import { h } from '../../ui.js';
 const LINKS = [
   ['#/admin', 'Rounds', 'calendar'],
   ['#/admin/new', 'New round', 'camera'],
-  ['#/admin/maps', 'Maps', 'map'],
+  ['#/admin/maps', 'Map', 'map'],
   ['#/admin/players', 'Players', 'users'],
 ];
 

@@ -73,11 +73,8 @@ export function difficultyPicker({ value, onChange }) {
   return { el, get: () => value };
 }
 
-/**
- * "Use phone compass" button. While live, onHeading(deg) fires as the phone turns; tap again to lock.
- * offset() returns the compass bearing of the map's top edge (subtracted from readings).
- */
-export function compassControl({ label = 'Use phone compass', offset = () => 0, onHeading, onStop }) {
+/** "Use phone compass" button. While live, onHeading(deg) fires as the phone turns; tap again to lock. */
+export function compassControl({ label = 'Use phone compass', onHeading, onStop }) {
   let stop = null;
   const text = h('span', {}, label);
   const button = h('button', { type: 'button', class: 'btn' }, icon('compass'), text);
@@ -88,9 +85,8 @@ export function compassControl({ label = 'Use phone compass', offset = () => 0, 
     if (stop) { end(); status.textContent = 'Direction locked. Fine-tune it with the slider if needed.'; onStop?.(); return; }
     status.textContent = 'Starting compass…';
     startCompass(deg => {
-      const mapDeg = Math.round(norm360(deg - (offset() || 0)));
-      status.textContent = `Compass ${deg}° → map ${mapDeg}°. Hold the phone the way you took the photo, then tap Lock.`;
-      onHeading(mapDeg, deg);
+      status.textContent = `Facing ${deg}°. Hold the phone the way you took the photo, then tap Lock.`;
+      onHeading(deg);
     }).then(s => {
       stop = s;
       text.textContent = 'Lock direction';

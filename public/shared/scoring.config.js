@@ -4,15 +4,15 @@
 //
 //   position  = position.max  × exp(−distance / scale)
 //               scale = mapSpan × position.scaleFraction × difficulty.scale
-//               (mapSpan = map diagonal in meters; never below position.minScaleMeters)
+//               (mapSpan = play area diagonal in meters; never below position.minScaleMeters)
 //   direction = direction.max × (1 − angleError / 180)        angleError is 0–180°
 //   total     = (position + direction) × difficulty.multiplier   (multiplier only if useDifficultyMultiplier)
 
 export default {
   position: {
     max: 5000,
-    // Missing by exactly one `scale` gives max/e ≈ 1839 points. 0.15 = 15% of the map's diagonal.
-    // Example: 12×15 ft dorm room (diagonal 19.2 ft) on Easy → scale ≈ 2.9 ft.
+    // Missing by exactly one `scale` gives max/e ≈ 1839 points. 0.15 = 15% of the play area's diagonal.
+    // Example: the default campus play area (about 3 km across) on Easy → scale ≈ 450 m.
     scaleFraction: 0.15,
     minScaleMeters: 0.25,
   },

@@ -7,7 +7,7 @@ A daily photo game for Cal Poly Pomona. Every day there's one photo taken somewh
 - **Play:** sign in with Google, choose a leaderboard name, and get **one try** at the day's round. Past rounds are open to everyone as practice.
 - **Leaderboards:** today, this week, all time.
 - **Admins (1–2 people):** take photos, mark the spot and direction, schedule rounds day by day, edit the campus map, and hide inappropriate names.
-- **Map:** overhead satellite view of campus with building names, plus to-scale indoor floor plans.
+- **Map:** overhead satellite view of campus with building names, or a street map.
 
 **Contents:** [Put it online](#put-it-online) · [Run it on your computer](#run-it-on-your-computer) · [How it works](#how-it-works) · [Scoring](#scoring) · [Project layout](#project-layout) · [Legal](#legal-and-licenses) · [Next steps](#next-steps)
 
@@ -59,11 +59,7 @@ Open `http://localhost:3000`. On your phone (same Wi-Fi), open the `http://192.1
 - **Names:** 3–20 characters. A list of blocked words catches the obvious bad ones (`supabase/blocked-names.json`), and admins can hide any name. That player is then asked for a new one.
 - **Privacy:** other players see only the chosen name. Players can delete their account and scores at any time.
 
-**Playing:** look at the photo, tap **Guess on map**, tap where the photographer stood, then aim:
-- **Campus map:** drag the white ring.
-- **Indoor floor plan:** drag from the dot.
-
-The slider and ⟲/⟳ buttons fine-tune the direction. When hosting, **Use phone compass** sets the direction from the phone; it needs HTTPS, which the published site has.
+**Playing:** look at the photo, tap **Guess on map**, tap where the photographer stood, then drag the white ring to aim. The slider and ⟲/⟳ buttons fine-tune the direction. When hosting, **Use phone compass** sets the direction from the phone; it needs HTTPS, which the published site has.
 
 ## Scoring
 
@@ -95,7 +91,7 @@ public/                     the website (published to GitHub Pages as-is)
   js/
     app.js                  app shell + router
     backend.js, session.js, api.js   Supabase connection, sign-in, every database call
-    map/                    floorplan.js (SVG floor plans), leaflet.js (campus satellite map)
+    map/                    the campus map (Leaflet: satellite/street view, markers, view cones)
     views/                  home, play, result, leaderboard, archive, account, legal, admin/*
   vendor/                   Leaflet, supabase-js, qrcode-generator (+ their licenses)
 supabase/

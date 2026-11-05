@@ -23,7 +23,7 @@ create table if not exists public.admins (
 
 create table if not exists public.maps (
   id         text primary key,
-  data       jsonb not null,               -- { type, name, units, width/length or bounds, features, … }
+  data       jsonb not null,               -- { type: 'latlng', name, units, bounds: { sw, ne }, features, … }
   updated_at timestamptz not null default now()
 );
 
@@ -143,39 +143,24 @@ language sql immutable as $$
       * sin(radians((b->>'lng')::float8 - (a->>'lng')::float8) / 2) ^ 2)))
 $$;
 
+-- Positions are { lat, lng }. `m` is the map (its play area bounds the positions).
 create or replace function public.valid_pos(m jsonb, p jsonb) returns boolean
 language sql immutable as $$
-  select coalesce(case m->>'type'
-    when 'floorplan' then jsonb_typeof(p->'x') = 'number' and jsonb_typeof(p->'y') = 'number'
-    when 'latlng' then jsonb_typeof(p->'lat') = 'number' and jsonb_typeof(p->'lng') = 'number'
-    else false end, false)
+  select coalesce(jsonb_typeof(p->'lat') = 'number' and jsonb_typeof(p->'lng') = 'number', false)
 $$;
 
 create or replace function public.clamp_pos(m jsonb, p jsonb) returns jsonb
 language sql immutable as $$
-  select case m->>'type'
-    when 'floorplan' then jsonb_build_object(
-      'x', least(greatest((p->>'x')::float8, 0), (m->>'width')::float8),
-      'y', least(greatest((p->>'y')::float8, 0), (m->>'length')::float8))
-    else jsonb_build_object(
-      'lat', least(greatest((p->>'lat')::float8, (m#>>'{bounds,sw,lat}')::float8), (m#>>'{bounds,ne,lat}')::float8),
-      'lng', least(greatest((p->>'lng')::float8, (m#>>'{bounds,sw,lng}')::float8), (m#>>'{bounds,ne,lng}')::float8))
-  end
+  select jsonb_build_object(
+    'lat', least(greatest((p->>'lat')::float8, (m#>>'{bounds,sw,lat}')::float8), (m#>>'{bounds,ne,lat}')::float8),
+    'lng', least(greatest((p->>'lng')::float8, (m#>>'{bounds,sw,lng}')::float8), (m#>>'{bounds,ne,lng}')::float8))
 $$;
 
 create or replace function public.map_distance(m jsonb, a jsonb, b jsonb) returns double precision
-language sql immutable as $$
-  select case m->>'type'
-    when 'floorplan' then sqrt(((b->>'x')::float8 - (a->>'x')::float8) ^ 2 + ((b->>'y')::float8 - (a->>'y')::float8) ^ 2)
-    else public.haversine(a, b) end
-$$;
+language sql immutable as $$ select public.haversine(a, b) $$;
 
 create or replace function public.map_span(m jsonb) returns double precision
-language sql immutable as $$
-  select case m->>'type'
-    when 'floorplan' then sqrt((m->>'width')::float8 ^ 2 + (m->>'length')::float8 ^ 2)
-    else public.haversine(m#>'{bounds,sw}', m#>'{bounds,ne}') end
-$$;
+language sql immutable as $$ select public.haversine(m#>'{bounds,sw}', m#>'{bounds,ne}') $$;
 
 -- Same formulas as shared/scoring.js. Rounding is floor(x + 0.5) to match JavaScript's Math.round.
 create or replace function public.score_guess(
@@ -455,48 +440,32 @@ end $$;
 create or replace function public.admin_save_map(p_map jsonb) returns jsonb
 language plpgsql volatile security definer set search_path = public as $$
 declare
-  map_type text := p_map->>'type';
   map_id text := coalesce(nullif(p_map->>'id', ''), substr(md5(gen_random_uuid()::text), 1, 10));
-  existing jsonb;
   m jsonb;
   feats jsonb;
 begin
   perform public.assert_admin();
   if map_id !~ '^[a-z0-9-]{1,40}$' then raise exception 'Bad map id' using errcode = '22023'; end if;
-  select data into existing from maps where id = map_id;
-  if existing is not null then map_type := existing->>'type'; end if; -- a map can't change type
-  if map_type not in ('floorplan', 'latlng') then raise exception 'Unknown map type' using errcode = '22023'; end if;
+  if not (public.valid_pos(null, p_map#>'{bounds,sw}') and public.valid_pos(null, p_map#>'{bounds,ne}'))
+     or (p_map#>>'{bounds,sw,lat}')::float8 >= (p_map#>>'{bounds,ne,lat}')::float8
+     or (p_map#>>'{bounds,sw,lng}')::float8 >= (p_map#>>'{bounds,ne,lng}')::float8
+     or abs((p_map#>>'{bounds,sw,lat}')::float8) > 85 or abs((p_map#>>'{bounds,ne,lat}')::float8) > 85 then
+    raise exception 'Invalid play area' using errcode = '22023';
+  end if;
 
   m := jsonb_build_object(
-    'type', map_type,
+    'type', 'latlng',
     'name', coalesce(nullif(left(trim(coalesce(p_map->>'name', '')), 60), ''), 'Untitled map'),
-    'units', case when p_map->>'units' = 'm' then 'm' else 'ft' end);
-
-  if map_type = 'floorplan' then
-    if jsonb_typeof(p_map->'width') is distinct from 'number' or jsonb_typeof(p_map->'length') is distinct from 'number'
-       or (p_map->>'width')::float8 not between 0.3 and 5000 or (p_map->>'length')::float8 not between 0.3 and 5000 then
-      raise exception 'Width and length must be between 0.3 m (1 ft) and 5 km' using errcode = '22023';
-    end if;
-    m := m || jsonb_build_object('width', (p_map->>'width')::float8, 'length', (p_map->>'length')::float8,
-      'topBearing', case when jsonb_typeof(p_map->'topBearing') = 'number' then public.norm360((p_map->>'topBearing')::float8) end);
-  else
-    if not (public.valid_pos('{"type":"latlng"}', p_map#>'{bounds,sw}') and public.valid_pos('{"type":"latlng"}', p_map#>'{bounds,ne}'))
-       or (p_map#>>'{bounds,sw,lat}')::float8 >= (p_map#>>'{bounds,ne,lat}')::float8
-       or (p_map#>>'{bounds,sw,lng}')::float8 >= (p_map#>>'{bounds,ne,lng}')::float8
-       or abs((p_map#>>'{bounds,sw,lat}')::float8) > 85 or abs((p_map#>>'{bounds,ne,lat}')::float8) > 85 then
-      raise exception 'Invalid play area' using errcode = '22023';
-    end if;
-    m := m || jsonb_build_object('bounds', jsonb_build_object(
+    'units', case when p_map->>'units' = 'm' then 'm' else 'ft' end,
+    'bounds', jsonb_build_object(
       'sw', jsonb_build_object('lat', (p_map#>>'{bounds,sw,lat}')::float8, 'lng', (p_map#>>'{bounds,sw,lng}')::float8),
-      'ne', jsonb_build_object('lat', (p_map#>>'{bounds,ne,lat}')::float8, 'lng', (p_map#>>'{bounds,ne,lng}')::float8)),
-      'topBearing', 0);
-    if public.map_span(m) > 50000 then raise exception 'Play area is too big (max 50 km across)' using errcode = '22023'; end if;
-    if p_map->>'osmImportedAt' ~ '^\d{4}-\d{2}-\d{2}T' then m := m || jsonb_build_object('osmImportedAt', left(p_map->>'osmImportedAt', 40)); end if;
-  end if;
+      'ne', jsonb_build_object('lat', (p_map#>>'{bounds,ne,lat}')::float8, 'lng', (p_map#>>'{bounds,ne,lng}')::float8)));
+  if public.map_span(m) > 50000 then raise exception 'Play area is too big (max 50 km across)' using errcode = '22023'; end if;
+  if p_map->>'osmImportedAt' ~ '^\d{4}-\d{2}-\d{2}T' then m := m || jsonb_build_object('osmImportedAt', left(p_map->>'osmImportedAt', 40)); end if;
 
   select coalesce(jsonb_agg(jsonb_build_object(
            'id', coalesce(nullif(left(f->>'id', 30), ''), substr(md5(gen_random_uuid()::text), 1, 8)),
-           'label', coalesce(nullif(left(trim(coalesce(f->>'label', '')), 60), ''), 'Feature'),
+           'label', coalesce(nullif(left(trim(coalesce(f->>'label', '')), 60), ''), 'Label'),
            'kind', case when f->>'kind' in ('building', 'parking', 'place', 'custom') then f->>'kind' else 'custom' end,
            'source', case when f->>'source' = 'osm' then 'osm' else 'user' end,
            'pos', public.clamp_pos(m, f->'pos'))), '[]'::jsonb)

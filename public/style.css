@@ -15,11 +15,7 @@
   --guess: #4aa8ff;
   --danger: #ff6b6b;
   --warn: #ffb020;
-  --floor: #1c3127;
   --map-bg: #0d1a14;
-  --grid: rgba(255, 255, 255, 0.07);
-  --walls: #dfe9e3;
-  --feature: #9cc3ff;
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
   --radius: 16px;
   --radius-sm: 10px;
@@ -31,8 +27,8 @@
   :root {
     --bg: #f2f5f3; --surface: #ffffff; --surface-2: #eef3f0; --surface-3: #e2eae5; --line: #d8e1db;
     --text: #0f2219; --muted: #5b7064; --accent: #f2a900; --accent-strong: #ffb81c; --brand: #1e4d2b;
-    --truth: #0f9d58; --guess: #1a73e8; --floor: #ffffff; --map-bg: #e4ebe6; --grid: rgba(0, 0, 0, 0.07);
-    --walls: #1e4d2b; --feature: #2a62c9; --shadow: 0 1px 2px rgba(16, 40, 28, 0.08), 0 8px 24px rgba(16, 40, 28, 0.08);
+    --truth: #0f9d58; --guess: #1a73e8; --map-bg: #e4ebe6;
+    --shadow: 0 1px 2px rgba(16, 40, 28, 0.08), 0 8px 24px rgba(16, 40, 28, 0.08);
     color-scheme: light;
   }
 }
@@ -156,8 +152,6 @@ input:focus, select:focus { border-color: var(--accent); outline: none; box-shad
 .field { display: grid; gap: 6px; margin-bottom: 12px; }
 .field > span { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
 .field-error { color: var(--danger); font-size: 0.9rem; min-height: 1.2em; margin: 6px 0 0; }
-.with-unit { position: relative; }
-.with-unit .unit { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
 .segmented { display: inline-flex; padding: 4px; gap: 4px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
 .segmented.wide { display: flex; }
 .segmented.wide .seg { flex: 1; }
@@ -288,25 +282,6 @@ input:focus, select:focus { border-color: var(--accent); outline: none; box-shad
 .map-box { position: relative; isolation: isolate; width: 100%; height: min(62vh, 110vw); background: var(--map-bg); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 .map-box.fill { height: auto; flex: 1; border-radius: 0; border-width: 1px 0; }
 .modal .map-box { height: min(60vh, 80vw); }
-.floorplan { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-select: none; }
-.floorplan.editing { touch-action: none; cursor: crosshair; }
-.floorplan.picking { cursor: crosshair; }
-.floorplan .room { fill: var(--floor); }
-.floorplan .grid line { stroke: var(--grid); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.floorplan .walls { fill: none; stroke: var(--walls); stroke-width: 4; vector-effect: non-scaling-stroke; }
-.floorplan .dim { fill: var(--muted); font-weight: 600; }
-.floorplan .north path { fill: var(--accent); }
-.floorplan .north text { fill: var(--accent); font-weight: 700; }
-.floorplan text { paint-order: stroke; stroke: var(--surface); stroke-linejoin: round; }
-.floorplan .feature circle { fill: var(--feature); }
-.floorplan .feature text { fill: var(--feature); font-weight: 600; }
-.floorplan .pose .cone { fill: var(--c); fill-opacity: 0.22; stroke: var(--c); stroke-opacity: 0.6; stroke-width: 1; vector-effect: non-scaling-stroke; }
-.floorplan .pose .shaft { stroke: var(--c); stroke-width: 3; vector-effect: non-scaling-stroke; stroke-linecap: round; }
-.floorplan .pose .head { fill: var(--c); }
-.floorplan .pose .dot { fill: var(--c); stroke: #fff; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
-.floorplan .pose .handle { fill: #fff; stroke: var(--c); stroke-width: 3; vector-effect: non-scaling-stroke; }
-.floorplan .pose-label { fill: var(--c); font-weight: 800; }
-.floorplan .link { stroke: var(--text); stroke-width: 2; stroke-dasharray: 6 5; vector-effect: non-scaling-stroke; }
 
 .leaflet-host { position: absolute; inset: 0; background: var(--map-bg); font: inherit; }
 .leaflet-host.picking { cursor: crosshair; }
