@@ -11,5 +11,5 @@ window.POLYSPOT_CONFIG = {
   contactEmail: 'rassa.wood@gmail.com',
   // Optional: ArcGIS Location Platform API key for sharper satellite imagery (see THIRD_PARTY_NOTICES.md).
   // Restrict it to your site's address in the ArcGIS dashboard.
-  esriApiKey: '',
+  esriApiKey: 'AAPTagNsd4pLvuThSmGIByCLfEA..F_RZNjxW3kw5A2ul8UejgIRVirOvYOjX7dZqrIZOu2JSVsuitDIzw4QN7xdnjJRRRcPmBXN6k7hzo7RV5-G-eQGkEPdT2qiViNdj9x78geglu7w_TGjXbe8y0U3HadG7X4oewGp7VAl7gjQHeoz6zVRF8l_Ej8riQL7G8seCzEJztlwKKb0kjTaEL_usreftBFrCD05pwuTDQAv5EOBkyZkJDDT7u06ZAMQ129EkrxAvZbHVRzEXAT1_3Lj7VWe0',
 };
