@@ -10,9 +10,7 @@ This is a good-faith summary for a free, non-commercial student project, not leg
 |---|---|---|---|
 | [Leaflet](https://leafletjs.com) | 1.9.4 | BSD 2-Clause. © 2010–2023 Volodymyr Agafonkin, © 2010–2011 CloudMade | `public/vendor/leaflet/LICENSE` |
 | [supabase-js](https://github.com/supabase/supabase-js) (browser build, includes `@supabase/auth-js`, `postgrest-js`, `storage-js`, `realtime-js`, `functions-js`, `phoenix`, all MIT, plus `tslib` helpers, 0BSD) | 2.119.0 | MIT. © 2020 Supabase | `public/vendor/supabase.LICENSE` |
-| [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) | – | MIT. © 2009 Kazuhiko Arase | `public/vendor/qrcode-generator.LICENSE` |
 
-"QR Code" is a registered trademark of DENSO WAVE INCORPORATED.
 
 ## Development and local-mode tools (installed with `npm install`, not part of the published site)
 

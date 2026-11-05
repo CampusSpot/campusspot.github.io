@@ -1,7 +1,7 @@
 // Home: today's round, your result, a peek at today's leaderboard, and how to play.
 import { api } from '../api.js';
 import { localInfo, photoUrl } from '../backend.js';
-import { leaderboardList, maxPointsText, qrBox } from '../components.js';
+import { leaderboardList, maxPointsText } from '../components.js';
 import { googleButton, scoring, session } from '../session.js';
 import { btn, formatDuration, h, msUntilMidnight, points } from '../ui.js';
 
@@ -77,14 +77,13 @@ function phoneCard() {
   if (!['localhost', '127.0.0.1'].includes(location.hostname) || !urls.length) return null;
   return h('section', { class: 'card' },
     h('h2', {}, 'Open on your phone'),
-    h('p', { class: 'small muted' }, 'Same Wi-Fi as this computer. Scan or type:'),
-    qrBox(urls[0]),
+    h('p', { class: 'small muted' }, 'Same Wi-Fi as this computer. Type this into your phone’s browser:'),
     h('p', { class: 'url center' }, urls.join('  ·  ')));
 }
 
 export function footer() {
   return h('footer', { class: 'site-footer' },
-    h('nav', {}, h('a', { href: '#/about' }, 'About & credits'), h('a', { href: '#/privacy' }, 'Privacy'), h('a', { href: '#/terms' }, 'Terms')),
+    h('nav', {}, h('a', { href: '#/about' }, 'About & credits'), h('a', { href: '#/privacy' }, 'Privacy Policy'), h('a', { href: '#/terms' }, 'Terms of Use')),
     h('p', {}, 'An independent student project. Not affiliated with or endorsed by Cal Poly Pomona.'));
 }
 

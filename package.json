@@ -11,13 +11,13 @@
     "campus",
     "cal-poly-pomona"
   ],
-  "homepage": "https://github.com/Rassa1/PolySpot#readme",
+  "homepage": "https://polyspot.github.io/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Rassa1/PolySpot.git"
+    "url": "git+https://github.com/PolySpot/polyspot.github.io.git"
   },
   "bugs": {
-    "url": "https://github.com/Rassa1/PolySpot/issues"
+    "url": "https://github.com/PolySpot/polyspot.github.io/issues"
   },
   "license": "MIT",
   "type": "module",

@@ -72,18 +72,6 @@ export function difficultyPicker({ value, onChange }) {
   return { el, get: () => value };
 }
 
-/** QR code for a link (shown on the computer so a phone can open the local copy). */
-export function qrBox(url) {
-  const box = h('div', { class: 'qr', role: 'img', 'aria-label': `QR code for ${url}` });
-  try {
-    const qr = window.qrcode(0, 'M');
-    qr.addData(url);
-    qr.make();
-    box.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
-  } catch { box.remove(); }
-  return box;
-}
-
 /** Leaderboard rows. */
 export function leaderboardList(rows, { columns = 'round', empty = 'No scores yet.' } = {}) {
   if (!rows.length) return h('p', { class: 'muted empty' }, empty);

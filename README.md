@@ -1,14 +1,14 @@
 # PolySpot
 
-[![Tests](https://github.com/Rassa1/PolySpot/actions/workflows/test.yml/badge.svg)](https://github.com/Rassa1/PolySpot/actions/workflows/test.yml)
+[![Tests](https://github.com/PolySpot/polyspot.github.io/actions/workflows/test.yml/badge.svg)](https://github.com/PolySpot/polyspot.github.io/actions/workflows/test.yml)
 
 A daily photo game for Cal Poly Pomona. Each day there's one photo taken somewhere on campus: you guess **where the photographer stood** and **which way the camera was facing**, then see how close you were and where you rank.
 
-**Play:** https://rassa1.github.io/PolySpot/
+**Play:** https://polyspot.github.io/
 
 ## How it works
 
-- **One round a day.** It unlocks at midnight Pacific time. Sign in with Google, pick a leaderboard name, and you get one try.
+- **One round a day.** It unlocks at midnight Pacific time. Anyone can play; sign in with Google and pick a leaderboard name to get a ranked try.
 - **Scoring:** up to 5,000 points for the spot and 5,000 for the direction. Harder rounds (Hard, Nighttime, Impossible) multiply the total.
 - **Leaderboards** for today, this week and all time. Other players only see the name you choose.
 - **Past rounds** stay open as practice for anyone; they don't count toward the leaderboard.

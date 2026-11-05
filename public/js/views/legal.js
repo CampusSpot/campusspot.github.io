@@ -1,18 +1,19 @@
 // About & credits, Privacy Policy, Terms of Use.
-// Plain-language policies for a small, free, non-commercial student project. Not legal advice;
-// review before making changes to what data is collected.
+// Review the policies before changing what data the site collects or how it is used.
 import { siteConfig } from '../backend.js';
 import { pageHeader } from '../components.js';
 import { h } from '../ui.js';
 import { footer } from './home.js';
 
-const UPDATED = 'November 5, 2026';
+const EFFECTIVE = 'November 5, 2026';
 const link = (href, text) => h('a', { href, target: '_blank', rel: 'noopener' }, text);
 const contact = () => siteConfig.contactEmail
   ? h('a', { href: `mailto:${siteConfig.contactEmail}` }, siteConfig.contactEmail)
-  : 'the contact address listed on this page once it’s published';
+  : 'the contact address published on this site';
 const section = (title, ...body) => h('section', { class: 'card prose' }, h('h2', {}, title), ...body);
 const ul = (...items) => h('ul', {}, items.map(i => h('li', {}, i)));
+const p = (...kids) => h('p', {}, ...kids);
+const term = (t, ...rest) => [h('strong', {}, t), ' ', ...rest];
 
 export function about(root) {
   const esri = !!siteConfig.esriApiKey;
@@ -31,8 +32,7 @@ export function about(root) {
     section('Software',
       h('ul', {},
         h('li', {}, link('https://leafletjs.com', 'Leaflet'), ' 1.9.4: © 2010–2023 Volodymyr Agafonkin, © 2010–2011 CloudMade. ', link('vendor/leaflet/LICENSE', 'BSD 2-Clause License'), '.'),
-        h('li', {}, link('https://github.com/supabase/supabase-js', 'supabase-js'), ': © 2020 Supabase. ', link('vendor/supabase.LICENSE', 'MIT License'), '.'),
-        h('li', {}, link('https://github.com/kazuhikoarase/qrcode-generator', 'qrcode-generator'), ': © 2009 Kazuhiko Arase. ', link('vendor/qrcode-generator.LICENSE', 'MIT License'), '. “QR Code” is a registered trademark of DENSO WAVE INCORPORATED.'))),
+        h('li', {}, link('https://github.com/supabase/supabase-js', 'supabase-js'), ': © 2020 Supabase. ', link('vendor/supabase.LICENSE', 'MIT License'), '.'))),
     section('Hosting', h('p', {}, 'The site is hosted on GitHub Pages; accounts, scores and photos are stored with Supabase.')),
     footer(),
   );
@@ -40,64 +40,87 @@ export function about(root) {
 
 export function privacy(root) {
   root.append(
-    pageHeader('Privacy policy', { back: '#/', sub: `Last updated ${UPDATED}` }),
-    section('The short version',
-      ul('We use Google sign-in only to know it’s you. Other players see the name you choose, never your email.',
-        'We store your email, account ID, chosen name and guesses. That’s it: no ads, no analytics, no tracking cookies.',
-        'We don’t sell or share your personal information.',
-        'You can delete your account and all your scores at any time from the “You” page.')),
-    section('Who runs PolySpot',
-      h('p', {}, 'PolySpot is a free, non-commercial student project. It is not run by Cal Poly Pomona. Questions or requests: ', contact(), '.')),
-    section('What we collect',
+    pageHeader('Privacy Policy', { back: '#/', sub: `Effective ${EFFECTIVE}` }),
+    section('1. Introduction',
+      p('This Privacy Policy describes how PolySpot (“PolySpot”, “we”, “us” or “our”) collects, uses, discloses and protects information in connection with the PolySpot website and game (the “Service”). By using the Service, you acknowledge that you have read and understood this Privacy Policy.'),
+      p('PolySpot is an independent, non-commercial project. It is not operated by, affiliated with, or endorsed by California State Polytechnic University, Pomona or the California State University.')),
+    section('2. Information We Collect',
+      p('We collect the following categories of information:'),
       ul(
-        [h('strong', {}, 'From Google, when you sign in: '), 'your email address and a unique account ID. Google also sends your name and profile picture; our sign-in provider stores them with your account, but PolySpot doesn’t display or use them.'],
-        [h('strong', {}, 'Your leaderboard name: '), 'the name you choose. It’s public.'],
-        [h('strong', {}, 'Your guesses: '), 'where you guessed, which way, your score and when. Your score, distance and angle on a day’s round are shown on the public leaderboard next to your chosen name.'],
-        [h('strong', {}, 'In your browser: '), 'we keep your sign-in session and a few display preferences in your browser’s local storage. We don’t use advertising or tracking cookies, and we don’t run analytics.'],
-        [h('strong', {}, 'Normal web traffic: '), 'like any website, the services that deliver this site (GitHub Pages), its data (Supabase) and its maps (USGS, OpenStreetMap, and Esri if enabled) receive your IP address and browser details when your browser contacts them. Their own privacy policies apply to that.'])),
-    section('How we use it',
-      ul('To run the game: sign you in, score your guesses, keep one try per daily round, and show leaderboards.',
-        'To keep it fair and friendly: spot cheating and remove offensive names.',
-        'We don’t use your information for advertising, and we don’t sell or share it.')),
-    section('Who processes it for us',
-      ul(['Supabase (database and sign-in): ', link('https://supabase.com/privacy', 'privacy policy')],
-        ['Google (sign-in): ', link('https://policies.google.com/privacy', 'privacy policy'), '. PolySpot’s use of information received from Google follows the ', link('https://developers.google.com/terms/api-services-user-data-policy', 'Google API Services User Data Policy'), ', including its Limited Use requirements.'],
-        ['GitHub Pages (website hosting): ', link('https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement', 'privacy statement')])),
-    section('How long we keep it',
-      h('p', {}, 'Until you delete your account. Deleting it (on the “You” page) immediately removes your name, guesses and sign-in record from our database. Copies in our providers’ backups, if any, expire on their schedule.')),
-    section('Your choices and rights',
-      ul('Change your leaderboard name or delete your account at any time in the app.',
-        ['To ask what we hold about you, or to correct or delete it, contact ', contact(), '.'],
-        'California residents have rights under the CCPA/CPRA, including to know, delete and correct personal information, and to not be discriminated against for using them. We do not sell or share personal information as those laws define it.')),
-    section('Photos',
-      h('p', {}, 'Round photos are taken by the PolySpot admins in places on and around campus. We avoid photographing people. If you appear in a photo and want it removed, contact ', contact(), ' and we’ll take it down.')),
-    section('Children',
-      h('p', {}, 'PolySpot is meant for college students and isn’t directed to children under 13. Please don’t create an account if you’re under 13. If we learn we have data from a child under 13, we’ll delete it.')),
-    section('Changes',
-      h('p', {}, 'If we change this policy we’ll update the date at the top. Significant changes will be announced on the home page.')),
+        term('Account information.', 'If you sign in with Google, we receive your email address and a unique account identifier from Google. Google may also provide your name and profile picture, which our authentication provider stores with your account; the Service does not display or otherwise use them.'),
+        term('Display name.', 'The leaderboard name you choose. Your display name is public.'),
+        term('Gameplay information.', 'For signed-in players: the location and direction of each guess, the resulting score, and the time it was made. Scores, distances and angles for the daily round are shown publicly on the leaderboard alongside your display name. Guesses made without signing in are scored but not stored.'),
+        term('Technical information.', 'When your browser loads the Service, the providers that host the website, database and maps (listed in Section 5) receive standard technical information, such as your IP address, browser type and the time of the request, as part of ordinary web traffic.'),
+        term('Local storage.', 'We store your sign-in session and a small number of display preferences in your browser’s local storage. We do not use advertising or tracking cookies, and we do not use analytics services.'))),
+    section('3. How We Use Information',
+      p('We use the information described above solely to:'),
+      ul('provide and operate the Service, including authenticating users, scoring guesses and displaying leaderboards;',
+        'enforce the one-ranked-attempt-per-day rule and otherwise maintain fair play;',
+        'moderate display names and enforce our Terms of Use;',
+        'respond to your inquiries and requests; and',
+        'maintain the security and integrity of the Service.'),
+      p('We do not use your information for advertising, and we do not sell your information.')),
+    section('4. Google User Data',
+      p('The Service’s use and transfer of information received from Google APIs adheres to the ', link('https://developers.google.com/terms/api-services-user-data-policy', 'Google API Services User Data Policy'), ', including the Limited Use requirements. We request only the basic profile scopes (email, profile and OpenID) and use the resulting information only to sign you in and identify your account.')),
+    section('5. Service Providers and Disclosure',
+      p('We share information only with service providers that process it on our behalf to operate the Service:'),
+      ul(['Supabase, Inc. (database, authentication and photo storage): ', link('https://supabase.com/privacy', 'Privacy Policy')],
+        ['Google LLC (sign-in): ', link('https://policies.google.com/privacy', 'Privacy Policy')],
+        ['GitHub, Inc. (website hosting): ', link('https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement', 'Privacy Statement')],
+        'Map imagery and data providers (U.S. Geological Survey, Esri and the OpenStreetMap Foundation), which receive standard technical information when your browser requests map images.'),
+      p('We may also disclose information if required to do so by law, or where we believe in good faith that disclosure is necessary to protect the rights, property or safety of PolySpot, its users or others.')),
+    section('6. Data Retention and Deletion',
+      p('We retain account and gameplay information for as long as your account exists. You may delete your account at any time from the “You” page. Deletion immediately and permanently removes your display name, guesses, scores and sign-in record from our database. Residual copies in our providers’ backups, if any, are removed according to those providers’ retention schedules.')),
+    section('7. Your Rights',
+      p('You may change your display name or delete your account at any time within the Service. You may also contact us to request access to, correction of, or deletion of your personal information.'),
+      p('If you are a California resident, you may have rights under the California Consumer Privacy Act, as amended by the California Privacy Rights Act, including the right to know, delete and correct personal information, and the right not to be discriminated against for exercising these rights. We do not sell or share personal information as those terms are defined under California law.')),
+    section('8. Children’s Privacy',
+      p('The Service is not directed to children under the age of 13, and we do not knowingly collect personal information from children under 13. If we learn that we have collected such information, we will delete it promptly.')),
+    section('9. Photographs',
+      p('Round photographs are taken by PolySpot administrators in publicly accessible locations, and we take care to avoid photographing identifiable individuals. If you believe a photograph depicts you or your property and would like it removed, please contact us and we will review and act on your request promptly.')),
+    section('10. Security',
+      p('We use reasonable technical and organizational measures to protect information, including access controls that limit what each user can read or change. No method of transmission or storage is completely secure, and we cannot guarantee absolute security.')),
+    section('11. Changes to This Policy',
+      p('We may update this Privacy Policy from time to time. The effective date above indicates when it was last revised. Material changes will be announced on the Service.')),
+    section('12. Contact',
+      p('Questions or requests regarding this Privacy Policy may be sent to ', contact(), '.')),
     footer(),
   );
 }
 
 export function terms(root) {
   root.append(
-    pageHeader('Terms of use', { back: '#/', sub: `Last updated ${UPDATED}` }),
-    section('The deal',
-      h('p', {}, 'PolySpot is a free game made by students for fun. By using it you agree to these terms and the ', h('a', { href: '#/privacy' }, 'privacy policy'), '. If you don’t agree, please don’t use it.')),
-    section('Who can play',
-      ul('You must be at least 13.', 'One account per person, using your own Google account.', 'Follow Cal Poly Pomona’s rules and the law when you’re on campus. Never trespass, go into closed areas, or put yourself in danger to find a spot.')),
-    section('Names',
-      h('p', {}, 'Your leaderboard name is public. Don’t use names that are offensive, hateful, sexual, that impersonate someone, or that include personal information. Admins may hide any name, and may remove accounts that break these rules.')),
-    section('Fair play',
-      ul('Don’t share the answer to the day’s round before the day ends.', 'Don’t use scripts or bots, or try to get around the one-try rule.', 'Don’t try to break, overload, or get into parts of the site you aren’t meant to. If you find a bug, please tell us.'),
-      h('p', {}, 'We may remove scores or accounts that we believe were gained unfairly.')),
-    section('Content and credits',
-      h('p', {}, 'Round photos belong to their photographers (the PolySpot admins); please don’t reuse them elsewhere without asking. Map imagery and data belong to their providers and are credited on the map and on the ', h('a', { href: '#/about' }, 'About & credits'), ' page. PolySpot’s source code is available under the MIT License.')),
-    section('No guarantees',
-      h('p', {}, 'PolySpot is provided “as is”, without warranties of any kind. It may be unavailable, change, lose data, or end at any time. To the extent the law allows, the people who run PolySpot aren’t liable for any damages from using it.'),
-      h('p', {}, 'PolySpot is not affiliated with, sponsored by, or endorsed by Cal Poly Pomona, the California State University, or GeoGuessr.')),
-    section('Changes and contact',
-      h('p', {}, 'We may update these terms; the date at the top shows the latest version. Questions: ', contact(), '.')),
+    pageHeader('Terms of Use', { back: '#/', sub: `Effective ${EFFECTIVE}` }),
+    section('1. Acceptance of Terms',
+      p('These Terms of Use (the “Terms”) govern your access to and use of the PolySpot website and game (the “Service”). By accessing or using the Service, you agree to be bound by these Terms and by our ', h('a', { href: '#/privacy' }, 'Privacy Policy'), '. If you do not agree, you may not use the Service.')),
+    section('2. Eligibility',
+      p('You must be at least 13 years of age to use the Service. By creating an account, you represent that you meet this requirement and that you will use only your own Google account.')),
+    section('3. Accounts and Display Names',
+      p('You are responsible for activity that occurs under your account. Display names must not be offensive, hateful, harassing, sexually explicit, misleading, or impersonate any person or organization, and must not contain personal information. PolySpot may hide or remove any display name, and may suspend or terminate any account, at its sole discretion.')),
+    section('4. Acceptable Use',
+      p('You agree not to:'),
+      ul('share or publish the answer to the daily round before that round has ended;',
+        'use scripts, bots or other automated means to access or play the Service;',
+        'circumvent the one-ranked-attempt-per-day rule or otherwise manipulate scores or leaderboards;',
+        'attempt to gain unauthorized access to the Service, its data or its systems, or interfere with its operation; or',
+        'trespass, enter restricted areas, or endanger yourself or others in connection with the Service.'),
+      p('PolySpot may remove scores or accounts that it reasonably believes were obtained in violation of these Terms.')),
+    section('5. Campus Conduct',
+      p('When on the Cal Poly Pomona campus, you remain subject to all applicable university policies and laws. Nothing in the Service grants permission to access any area of the campus.')),
+    section('6. Intellectual Property',
+      p('Round photographs are owned by their photographers and may not be reproduced or redistributed without permission. Map imagery and data are the property of their respective providers and are credited on the map and on the ', h('a', { href: '#/about' }, 'About & credits'), ' page. The Service’s source code is made available under the MIT License.')),
+    section('7. Disclaimer of Warranties',
+      p('THE SERVICE IS PROVIDED “AS IS” AND “AS AVAILABLE”, WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE OR NON-INFRINGEMENT. POLYSPOT DOES NOT WARRANT THAT THE SERVICE WILL BE UNINTERRUPTED, ERROR-FREE OR SECURE, OR THAT ANY DATA WILL BE PRESERVED.')),
+    section('8. Limitation of Liability',
+      p('TO THE FULLEST EXTENT PERMITTED BY LAW, POLYSPOT AND ITS OPERATORS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL OR PUNITIVE DAMAGES, OR ANY LOSS OF DATA, ARISING OUT OF OR RELATING TO YOUR USE OF, OR INABILITY TO USE, THE SERVICE.')),
+    section('9. Changes to the Service and These Terms',
+      p('PolySpot may modify, suspend or discontinue the Service, in whole or in part, at any time without notice. We may revise these Terms from time to time; the effective date above indicates the latest version. Your continued use of the Service after a revision constitutes acceptance of the revised Terms.')),
+    section('10. Disclaimer of Affiliation',
+      p('PolySpot is an independent project and is not affiliated with, sponsored by, or endorsed by California State Polytechnic University, Pomona, the California State University, or GeoGuessr AB.')),
+    section('11. Governing Law',
+      p('These Terms are governed by the laws of the State of California, without regard to its conflict-of-laws principles.')),
+    section('12. Contact',
+      p('Questions about these Terms may be sent to ', contact(), '.')),
     footer(),
   );
 }
