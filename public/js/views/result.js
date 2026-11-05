@@ -1,27 +1,39 @@
-// Results: truth vs guess on the map, errors, points, and the guess history for the round.
-import scoring from '/shared/scoring.config.js';
+// Results: the answer vs your guess on the map, the points, your rank today, and sharing.
 import { api } from '../api.js';
-import { card, difficultyBadge, page } from '../components.js';
+import { photoUrl } from '../backend.js';
+import { difficultyBadge, pageHeader } from '../components.js';
+import { icon } from '../icons.js';
 import { createMapView } from '../map/index.js';
+import { scoring, session } from '../session.js';
 import { formatLength } from '../units.js';
-import { formatDate, formatTime, h, points } from '../ui.js';
+import { btn, formatDate, formatTime, h, points, toast } from '../ui.js';
 
-export async function result(root, roundId, guessId) {
-  const { round, map, truth, guesses } = await api.guesses(roundId);
-  const main = page(root, 'Results', { back: '#/rounds' });
-  if (!guesses.length) {
-    main.append(card(h('p', {}, 'No guesses yet for this round.'), h('a', { class: 'btn primary', href: `#/play/${roundId}` }, '▶ Play it')));
+// The latest result, kept in memory so guests (whose practice isn't stored) still see it.
+let last = null;
+export const rememberResult = res => { last = res; };
+
+export async function result(root, roundId) {
+  const data = last?.round?.id === roundId ? last : session.user ? await api.myResult(roundId) : null;
+  if (!data?.guesses?.length) {
+    const { round, isToday } = await api.round(roundId);
+    root.append(pageHeader('Results', { back: '#/' }), h('div', { class: 'empty-state' },
+      h('p', { class: 'muted' }, 'You haven’t played this round yet.'),
+      btn(isToday ? 'Play today’s round' : 'Play this round', { href: `#/play/${round.id}`, icon: 'play', class: 'primary' })));
     return;
   }
+  const { round, map, truth, guesses, rank } = data;
+  const isToday = round.date === session.boot.today;
+  const cfg = scoring();
+  let current = guesses.find(g => g.ranked) || guesses.at(-1);
 
-  const hero = h('div', { class: 'hero' });
+  const hero = h('div', { class: 'score-hero' });
   const stats = h('div', { class: 'stats' });
   const box = h('div', { class: 'map-box' });
-  const historyList = h('ol', { class: 'history' });
+  const history = h('ol', { class: 'history' });
   const view = createMapView(box, map);
-  let current = guesses.find(g => g.id === guessId) || guesses.at(-1);
 
-  const bar = (value, max, cls) => h('div', { class: `bar ${cls}` }, h('span', { style: { width: `${(100 * value) / max}%` } }));
+  const bar = (value, max, cls) => h('div', { class: `bar ${cls}`, role: 'img', 'aria-label': `${points(value)} of ${points(max)}` },
+    h('span', { style: { width: `${(100 * value) / max}%` } }));
 
   function show(g) {
     current = g;
@@ -33,42 +45,55 @@ export async function result(root, roundId, guessId) {
     view.focus([g.pos, truth.pos]);
     hero.replaceChildren(
       h('div', { class: 'total' }, points(g.total)),
-      h('div', { class: 'muted' }, `of ${points(g.max)} points`, g.multiplier !== 1 ? ` · includes ×${g.multiplier} difficulty bonus` : ''));
+      h('div', { class: 'muted' }, `of ${points(g.max)} points`, g.multiplier !== 1 ? ` · ×${g.multiplier} ${cfg.difficulties[round.difficulty]?.label || ''} bonus` : ''),
+      g.ranked && rank ? h('div', { class: 'rank-pill' }, icon('trophy', { size: 16 }), ` #${rank.place} of ${rank.of} today`) : null,
+      !g.ranked ? h('div', { class: 'small muted' }, isToday ? 'Not ranked: you made this round.' : 'Practice round · not on the leaderboard') : null);
     stats.replaceChildren(
       h('div', { class: 'stat' },
-        h('div', { class: 'stat-head' }, h('span', {}, '📍 Position'), h('strong', {}, `${points(g.position)} pts`)),
-        bar(g.position, scoring.position.max, 'pos'),
-        h('div', { class: 'small muted' }, `${formatLength(g.distance, map.units)} off`)),
+        h('div', { class: 'stat-head' }, h('span', {}, icon('pin', { size: 18 }), ' Position'), h('strong', {}, `${points(g.position)}`)),
+        bar(g.position, cfg.position.max, 'pos'),
+        h('div', { class: 'small muted' }, `${formatLength(g.distance, map.units)} away`)),
       h('div', { class: 'stat' },
-        h('div', { class: 'stat-head' }, h('span', {}, '🧭 Direction'), h('strong', {}, `${points(g.direction)} pts`)),
-        bar(g.direction, scoring.direction.max, 'dir'),
-        h('div', { class: 'small muted' }, `${Math.round(g.angleError)}° off (you ${Math.round(g.heading)}°, actual ${Math.round(truth.heading)}°)`)));
+        h('div', { class: 'stat-head' }, h('span', {}, icon('compass', { size: 18 }), ' Direction'), h('strong', {}, `${points(g.direction)}`)),
+        bar(g.direction, cfg.direction.max, 'dir'),
+        h('div', { class: 'small muted' }, `${Math.round(g.angleError)}° off · you ${Math.round(g.heading)}°, actual ${Math.round(truth.heading)}°`)));
     renderHistory();
   }
 
   function renderHistory() {
-    const best = Math.max(...guesses.map(g => g.total));
-    historyList.replaceChildren(...[...guesses].reverse().map((g, i) => h('li', {},
+    history.replaceChildren(...[...guesses].reverse().map((g, i) => h('li', {},
       h('button', { type: 'button', class: `history-row${g === current ? ' current' : ''}`, onclick: () => show(g) },
         h('span', { class: 'n' }, `#${guesses.length - i}`),
-        h('span', { class: 'grow' }, formatTime(g.createdAt)),
+        h('span', { class: 'grow' }, g.createdAt ? formatTime(g.createdAt) : 'Just now'),
         h('span', { class: 'small muted' }, `${formatLength(g.distance, map.units)} · ${Math.round(g.angleError)}°`),
-        h('strong', {}, points(g.total), g.total === best ? ' ★' : '')))));
+        h('strong', {}, points(g.total))))));
   }
 
-  main.append(
-    h('p', { class: 'center small muted' }, round.title || 'Round', ' · ', formatDate(round.date), ' · ', difficultyBadge(round.difficulty)),
+  async function share() {
+    const g = current;
+    const text = `PolySpot ${formatDate(round.date, '')}: ${points(g.total)}/${points(g.max)}\n📍 ${formatLength(g.distance, map.units)} off · 🧭 ${Math.round(g.angleError)}° off${g.ranked && rank ? ` · #${rank.place} of ${rank.of}` : ''}\n${location.origin + location.pathname}`;
+    try {
+      if (navigator.share) await navigator.share({ text });
+      else { await navigator.clipboard.writeText(text); toast('Copied, ready to paste'); }
+    } catch { /* cancelled */ }
+  }
+
+  root.append(
+    pageHeader(isToday ? 'Today’s result' : 'Practice result', { back: isToday ? '#/' : '#/archive',
+      sub: [round.title || formatDate(round.date, session.boot.today), ' · ', difficultyBadge(round.difficulty)] }),
     hero,
     box,
     h('div', { class: 'legend' },
-      h('span', {}, h('i', { class: 'swatch truth' }), 'Actual'),
+      h('span', {}, h('i', { class: 'swatch truth' }), 'Actual spot'),
       h('span', {}, h('i', { class: 'swatch guess' }), 'Your guess')),
     stats,
-    h('div', { class: 'row' },
-      h('a', { class: 'btn primary grow', href: `#/play/${roundId}` }, '↻ Try again'),
-      h('a', { class: 'btn grow', href: '#/rounds' }, 'All rounds')),
-    card(h('h2', {}, 'The photo'), h('a', { href: round.photoUrl, target: '_blank' }, h('img', { class: 'preview', src: round.photoUrl, alt: 'Round photo' }))),
-    card(h('h2', {}, `Your guesses (${guesses.length})`), historyList),
+    h('div', { class: 'row wrap' },
+      isToday ? btn('Share', { icon: 'share', class: 'primary grow', onclick: share }) : btn('Try again', { href: `#/play/${round.id}`, icon: 'play', class: 'primary grow' }),
+      btn('Leaderboard', { href: '#/leaderboard', icon: 'trophy', class: 'grow' }),
+      btn('Past rounds', { href: '#/archive', icon: 'calendar', class: 'grow' })),
+    h('section', { class: 'card' }, h('h2', {}, 'The photo'),
+      h('a', { href: photoUrl(round.photoPath), target: '_blank', rel: 'noopener' }, h('img', { class: 'preview', src: photoUrl(round.photoPath), alt: 'Round photo' }))),
+    guesses.length > 1 ? h('section', { class: 'card' }, h('h2', {}, `Your tries (${guesses.length})`), history) : null,
   );
   show(current);
   return () => view.destroy();

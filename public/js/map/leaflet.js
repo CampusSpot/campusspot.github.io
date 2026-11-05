@@ -2,8 +2,8 @@
 // headings are compass bearings (0 = north, which is up). See ./index.js for the interface.
 // Map tiles load from the internet; everything else stays local. Each provider's terms and required credit
 // are listed in THIRD_PARTY_NOTICES.md. Credits show in the map's attribution corner.
-import { bearing, clampPos } from '/shared/geo.js';
-import { runtime } from '../runtime.js';
+import { bearing, clampPos } from '../../shared/geo.js';
+import { siteConfig } from '../backend.js';
 import { h } from '../ui.js';
 
 const CONE_HALF_ANGLE = 30;
@@ -11,13 +11,15 @@ const EARTH_R = 6371008.8;
 const rad = d => (d * Math.PI) / 180;
 const deg = r => (r * 180) / Math.PI;
 const ll = p => [p.lat, p.lng];
+// Labels go into the map as text nodes, never as HTML: building names come from the internet.
+const text = s => document.createTextNode(String(s));
 
 const OSM_COPYRIGHT = '<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 /** Base layers; the first one is shown by default. */
 function baseLayers(L) {
   const layers = {};
-  const esriKey = runtime.info?.esriApiKey;
+  const esriKey = siteConfig.esriApiKey;
   if (esriKey) {
     // Sharper imagery. Needs a free ArcGIS Location Platform API key (ESRI_API_KEY); Esri requires "Powered by Esri".
     layers['Satellite (Esri)'] = L.tileLayer(
@@ -85,9 +87,9 @@ export function createLeafletView(container, initialMap) {
     L.polygon([ll(point), ll(left), ll(right)], { color: c, weight: 1, fillColor: c, fillOpacity: 1, interactive: false }).addTo(layer);
   }
 
-  function label(layer, text, side) {
+  function label(layer, label, side) {
     const tip = L.tooltip({ permanent: true, direction: side === 'left' ? 'left' : 'right', offset: [side === 'left' ? -10 : 10, 0], className: 'pose-tip', interactive: false });
-    tip.setContent(text);
+    tip.setContent(text(label));
     tip.setLatLng(layer.getLatLng());
     return tip;
   }
@@ -120,7 +122,7 @@ export function createLeafletView(container, initialMap) {
     }
     for (const f of map.features || []) {
       L.circleMarker(ll(f.pos), { radius: 3.5, color: '#fff', weight: 1.5, fillColor: f.kind === 'parking' ? '#3b82f6' : '#111', fillOpacity: 1, interactive: false })
-        .bindTooltip(f.label, { permanent: true, direction: 'top', offset: [0, -4], className: `feat-tip kind-${f.kind || 'custom'}` })
+        .bindTooltip(text(f.label), { permanent: true, direction: 'top', offset: [0, -4], className: `feat-tip kind-${f.kind || 'custom'}` })
         .addTo(labelLayer);
     }
   }
@@ -148,7 +150,7 @@ export function createLeafletView(container, initialMap) {
         draggable: true, keyboard: false, autoPan: true,
         icon: L.divIcon({ className: 'lf-marker', html: `<div class="lf-dot" style="--c:${c}"></div>`, iconSize: [26, 26] }),
       }).addTo(editLayer);
-      if (ed.label) ed.dot.bindTooltip(ed.label, { permanent: true, direction: 'right', offset: [12, 0], className: 'pose-tip' }).openTooltip();
+      if (ed.label) ed.dot.bindTooltip(text(ed.label), { permanent: true, direction: 'right', offset: [12, 0], className: 'pose-tip' }).openTooltip();
       ed.dot.getTooltip()?.getElement()?.style.setProperty('color', c);
       ed.dot.on('drag', e => { ed.dragging = 'dot'; ed.state.pos = clamp(e.latlng); renderEditor(); emit(); });
       ed.dot.on('dragend', () => { ed.dragging = null; renderEditor(); });
@@ -180,7 +182,7 @@ export function createLeafletView(container, initialMap) {
       emit();
     }
   });
-  lmap.on('zoomend', () => { updateLabelDensity(); drawPoses(); renderEditor(); });
+  lmap.on('zoomend', () => { if (destroyed) return; updateLabelDensity(); drawPoses(); renderEditor(); });
 
   function stopEditing() {
     editor = null;
@@ -191,14 +193,14 @@ export function createLeafletView(container, initialMap) {
 
   // Leaflet needs a visible, sized container; the play view starts with the map hidden.
   function fit() {
-    if (!el.clientWidth || !el.clientHeight) return;
+    if (destroyed || !el.clientWidth || !el.clientHeight) return;
     lmap.invalidateSize();
-    if (focusOn?.length) lmap.fitBounds(L.latLngBounds(focusOn.map(ll)).pad(0.6), { maxZoom: 19 });
-    else lmap.fitBounds(L.latLngBounds(ll(map.bounds.sw), ll(map.bounds.ne)));
+    if (focusOn?.length) lmap.fitBounds(L.latLngBounds(focusOn.map(ll)).pad(0.6), { maxZoom: 19, animate: false });
+    else lmap.fitBounds(L.latLngBounds(ll(map.bounds.sw), ll(map.bounds.ne)), { animate: false });
     fitted = true;
   }
   const ro = new ResizeObserver(() => {
-    if (!el.clientWidth) return;
+    if (destroyed || !el.clientWidth) return;
     lmap.invalidateSize();
     if (!fitted) fit();
   });
@@ -255,6 +257,8 @@ export function createLeafletView(container, initialMap) {
       if (destroyed) return;
       destroyed = true;
       ro.disconnect();
+      lmap.stop(); // end any pan/zoom animation first, or Leaflet errors after removal
+      lmap.off();
       lmap.remove();
       el.remove();
     },

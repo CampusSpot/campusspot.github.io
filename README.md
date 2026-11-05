@@ -2,220 +2,137 @@
 
 [![Tests](https://github.com/Rassa1/polyspot/actions/workflows/test.yml/badge.svg)](https://github.com/Rassa1/polyspot/actions/workflows/test.yml)
 
-A photo-location guessing game for Cal Poly Pomona. The host takes one photo and marks where they stood and which way the camera faced. The player looks at the photo, taps a spot on the map and aims an arrow. The game scores both the position and the direction.
+A daily photo game for Cal Poly Pomona. Every day there's one photo taken somewhere on campus: players guess **where the photographer stood** and **which way the camera faced**, then see how close they were and where they rank.
 
-There are two maps:
-- **Cal Poly Pomona campus:** an overhead satellite view (with a street-map toggle) labeled with building names from OpenStreetMap. This is the default.
-- **My dorm room:** a to-scale floor plan for testing indoors.
+- **Play:** sign in with Google, choose a leaderboard name, and get **one try** at the day's round. Past rounds are open to everyone as practice.
+- **Leaderboards:** today, this week, all time.
+- **Admins (1–2 people):** take photos, mark the spot and direction, schedule rounds day by day, edit the campus map, and hide inappropriate names.
+- **Map:** overhead satellite view of campus with building names, plus to-scale indoor floor plans.
 
-It runs on your laptop, and your phone can play it over the same Wi-Fi. There are no accounts and nothing goes to the cloud. Data is kept in `data/db.json` and `data/photos/`.
+**Contents:** [Put it online](#put-it-online) · [Run it on your computer](#run-it-on-your-computer) · [How it works](#how-it-works) · [Scoring](#scoring) · [Project layout](#project-layout) · [Legal](#legal-and-licenses) · [Next steps](#next-steps)
 
-**Internet:** the campus map's satellite/street tiles load from USGS and OpenStreetMap (or Esri, if you add a key) on whichever device shows the map. Building names are downloaded once by the laptop. The dorm floor plan works fully offline.
+## Put it online
 
-![Photo → guess → results (on the dorm floor plan)](docs/screens.png)
+Free, using GitHub Pages (website) + Supabase (database, Google sign-in, photos). Step-by-step guide with every click: **[docs/SETUP.md](docs/SETUP.md)**.
 
-**Contents:** [Run it](#run-it) · [Troubleshooting](#troubleshooting) · [Phone compass](#phone-compass-optional-and-https) · [How to play](#how-to-play) · [Scoring](#scoring) · [Project layout](#project-layout) · [Legal](#legal-and-licenses) · [Next steps](#suggested-next-steps)
+## Run it on your computer
 
-## Run it
-
-You need [Git](https://git-scm.com) and [Node.js](https://nodejs.org) 20 or newer. There are no dependencies, so you don't need `npm install`.
-
-First time (any terminal; on Windows, PowerShell):
+You need [Git](https://git-scm.com) and [Node.js](https://nodejs.org) 20 or newer.
 
 ```bash
 cd ~
 git clone https://github.com/Rassa1/polyspot.git
 cd polyspot
+npm install
 npm start
 ```
 
-After that, to update and run:
+Open `http://localhost:3000`. On your phone (same Wi-Fi), open the `http://192.168…:3000` address it prints, or scan the QR code on the home page.
 
-```bash
-cd ~/polyspot
-git pull
-npm start
-```
-
-Press **Ctrl+C** to stop the server. Stop it before starting a new one, or the old version keeps running on port 3000.
-
-```
-  PolySpot is running
-
-  On this laptop:   http://localhost:3000
-  On your phone:    http://192.168.1.23:3000   (same Wi-Fi)
-```
-
-- **Laptop:** open `http://localhost:3000`.
-- **Phone:** join the same Wi-Fi as the laptop and open the "On your phone" address. You can also scan the QR code shown on the laptop's home page.
-
-The first run loads sample data: the campus map, a 12 × 15 ft dorm-room map, and a practice round in the dorm (under **All rounds**). On start, the server also fetches campus building names from OpenStreetMap (it prints `Loaded N building/place names…`). If the laptop was offline, it retries on the next start, or you can use **🗺 Campus map → Import building names**.
+- **Local mode (default):** until `public/config.js` has a Supabase URL, PolySpot runs a complete test copy on your computer. It uses the same database code as the live site, saved in `data/`. Sign-in is "type any email". `admin@example.com` is an admin; change that with `ADMIN_EMAILS=you@x.com npm start`. Map images still need internet.
+- **Live mode:** once `public/config.js` is filled in, `npm start` serves the site against your real Supabase project, like the published site. `npm run local` forces local mode.
 
 | Command | What it does |
 |---|---|
-| `npm start` | Start the server (HTTP on 3000, and HTTPS on 3443 if certs exist) |
-| `npm run dev` | Same, restarting when files change |
-| `npm test` | Run the tests (scoring, geometry, API, OpenStreetMap import) |
-| `npm run check` | Syntax-check every JavaScript file (GitHub runs this and the tests on Node 20, 22 and 24 for each push) |
-| `npm run cert` | Make HTTPS certificates for the phone compass (see below) |
-| `npm run reset` | Delete all local data. The next start loads the sample again |
-
-You can change the defaults with environment variables `PORT`, `HTTPS_PORT`, `HOST` (default `0.0.0.0`) and `DATA_DIR`. `ESRI_API_KEY` turns on sharper satellite imagery (see [Legal](#legal-and-licenses)).
+| `npm start` | Run the site (and local test database) on port 3000 |
+| `npm run local` | Force local mode even when Supabase is configured |
+| `npm run dev` | Same as start, restarting on file changes |
+| `npm test` | All tests: database rules, scoring, local server, files |
+| `npm run check` | Syntax-check every JavaScript file |
+| `npm run build:sql` | Rebuild `supabase/setup.sql` after changing scoring or SQL |
+| `npm run vendor` | Copy the Supabase browser library into `public/vendor` after updating it |
+| `npm run cert` | HTTPS certificates for testing the phone compass on your Wi-Fi (the published site already has HTTPS) |
 
 ### Troubleshooting
-- **"Port 3000 is already in use"** (or the page still shows an old version): an older server is still running. Stop it, then `npm start` again.
+- **"Port 3000 is already in use":** an older copy is still running. Stop it, then start again.
   - Windows PowerShell: `Get-NetTCPConnection -LocalPort 3000 | % { Stop-Process -Id $_.OwningProcess -Force }`
   - macOS/Linux: `lsof -ti :3000 | xargs kill`
-- **"Cannot find path" / "not a git repository":** you're in the wrong folder. Run `cd ~/polyspot` first. A new PowerShell window starts in your user folder, or in `C:\Windows\system32` if you opened it as Administrator.
+- **"Cannot find path" / "not a git repository":** run `cd ~/polyspot` first.
+- **Phone can't connect:** allow Node through the firewall (private networks). Campus Wi-Fi often blocks device-to-device traffic; use your phone's hotspot for the computer instead.
+- **To start over in local mode:** stop the server and delete the `data` folder.
 
-**Phone can't connect?**
-- **Firewall:** let Node accept incoming connections. macOS and Windows ask the first time; if you clicked "Deny", allow it in the firewall settings.
-- **Campus/dorm Wi-Fi often blocks device-to-device traffic** (client isolation). If the phone times out, turn on your phone's hotspot, connect the laptop to it, restart, and use the new address it prints.
-- Use the `192.168…` / `10.…` address, not `localhost`. `localhost` on the phone means the phone itself.
+## How it works
 
-## Phone compass (optional) and HTTPS
+- **Today's round** unlocks at midnight Pacific time. You need to be signed in with a leaderboard name. You get one try, and it's ranked, except for the admin who made it.
+- **Past rounds** are practice: anyone can play, as often as they like, and they're not ranked. Guests' practice isn't saved.
+- **Answers stay hidden.** The database only reveals the true spot to someone who has already guessed, and scheduled rounds are invisible to players until their day.
+- **Names:** 3–20 characters. A list of blocked words catches the obvious bad ones (`supabase/blocked-names.json`), and admins can hide any name. That player is then asked for a new one.
+- **Privacy:** other players see only the chosen name. Players can delete their account and scores at any time.
 
-The host can tap **🧭 Use phone compass**: the arrow then follows the direction the phone's back camera points, and you tap **Lock** to keep it. You can always set the direction by hand instead, by dragging the arrow or using the slider.
+**Playing:** look at the photo, tap **Guess on map**, tap where the photographer stood, then aim:
+- **Campus map:** drag the white ring.
+- **Indoor floor plan:** drag from the dot.
 
-Browsers only allow the compass on secure pages. `http://localhost` counts as secure, but `http://192.168.x.x` on your phone does not. **iPhone needs HTTPS** plus a permission tap, and Android Chrome needs HTTPS too.
-
-1. Run `npm run cert` and restart `npm start`. It now also prints `https://192.168.x.x:3443`.
-2. Open that HTTPS address on the phone. How you get past the certificate warning depends on how the cert was made:
-   - **mkcert (recommended):** install [mkcert](https://github.com/FiloSottile/mkcert) (`brew install mkcert`, `choco install mkcert` or `scoop install mkcert`), then run `mkcert -install` once before `npm run cert`. Then trust the mkcert root on the iPhone once: AirDrop `rootCA.pem` (the script prints its path) → Settings → General → VPN & Device Management → install, then Settings → General → About → Certificate Trust Settings → turn it on. After that there's no warning.
-   - **openssl fallback:** if mkcert isn't installed, the script makes a self-signed cert. On the phone, tap *Show Details → visit this website* (iPhone) or *Advanced → Proceed* (Android). If the compass is still refused, use mkcert.
-   - **Android only, no certs:** in Chrome open `chrome://flags/#unsafely-treat-insecure-origin-as-secure`, add `http://192.168.x.x:3000` and relaunch.
-3. If your laptop's IP changes (a new network), run `npm run cert` again.
-
-**Map alignment.** A compass gives degrees from north, but "up" on your floor plan probably isn't north. Open **🗺 Campus map**, switch the dropdown to **My dorm room**, open **Compass alignment**, stand inside, point the camera at the top wall of the map and lock. After that, compass readings convert to map headings. Indoor compasses are often off by 10–20° because of steel and electronics, so fine-tune with the slider.
-
-## How to play
-
-1. **Maps** (`🗺 Campus map` on the home page). The dropdown at the top switches between the campus and your dorm floor plan.
-   - **Campus:** the dashed box is the play area; guesses can't go outside it. Pan or zoom to the area you want, then tap **Use current view as play area**. Re-import or rename building labels, add your own (a fountain, a garden…), and choose feet or meters for distances. The layers button switches between satellite and street map and hides labels. Labels appear as you zoom in.
-   - **Dorm floor plan:** enter width and length in feet or meters (there's a toggle). The plan is drawn to scale with a grid. Add labeled features (door, bed, desk…) and tap where each one is.
-2. **Host a round** (`📷`):
-   - Take a photo (opens the camera) or choose one. The photo is shrunk to about 0.5 MB in the browser and its EXIF/GPS data is removed.
-   - The campus map is selected. Pick **My dorm room** in the dropdown for indoor rounds.
-   - **Campus:** pinch to zoom, **tap where you stood**, then drag the **white ring** to aim. Drag the dot to move it.
-   - **Floor plan:** **tap where you stood and drag toward where the camera pointed**. Drag the dot to move it, or the arrow tip to re-aim it.
-   - On either map, the slider and the ⟲/⟳ buttons fine-tune the direction. On campus, north is up, so the phone compass needs no alignment.
-   - Pick a difficulty (Easy, Hard, Nighttime or Impossible) and a release date (default today). Then save.
-3. **Play** (`▶`): this opens today's round. If none is released today, it offers to host one. The full list under **All rounds** lets you pick any round for testing. The photo shows full screen (tap it to zoom). Tap **Guess on map →**, place yourself and aim the same way as the host, then submit.
-4. **Results:** the map zooms to show both positions and both view cones, with a dashed line between the positions. You also get the distance error, the angle error (shortest difference, 0–180°), the points, and your guess history for that round. Tap a past guess to see it on the map.
-
-The answer never leaves the server until a guess has been made for that round.
+The slider and ⟲/⟳ buttons fine-tune the direction. When hosting, **Use phone compass** sets the direction from the phone; it needs HTTPS, which the published site has.
 
 ## Scoring
 
-All scoring settings are in **[`shared/scoring.config.js`](shared/scoring.config.js)**. The server uses it to score guesses and the browser uses it for labels.
+All scoring settings are in **[`public/shared/scoring.config.js`](public/shared/scoring.config.js)**. The database scores every guess with the same formulas (`supabase/schema.sql`), and a test checks that the two always agree. After changing the settings:
+1. Run `npm run build:sql`.
+2. Re-run `supabase/setup.sql` in Supabase.
 
 ```
-position  = 5000 × exp(−distance / scale)
-            scale = mapDiagonal × scaleFraction (0.15) × difficulty.scale
-direction = 5000 × (1 − angleError / 180)
-total     = (position + direction) × difficulty.multiplier   (if useDifficultyMultiplier)
+position  = 5000 × exp(−distance / scale)      scale = map diagonal × 0.15 × difficulty.scale
+direction = 5000 × (1 − angleError / 180)      angleError = shortest difference, 0–180°
+total     = (position + direction) × difficulty.multiplier
 ```
 
-| Difficulty | scale (more forgiving on distance) | multiplier | max |
+| Difficulty | distance leniency | multiplier | max |
 |---|---|---|---|
-| Easy | 1.0 | ×1 | 10,000 |
-| Hard | 1.3 | ×1.25 | 12,500 |
-| Nighttime | 1.6 | ×1.5 | 15,000 |
-| Impossible | 2.0 | ×2 | 20,000 |
+| Easy | ×1.0 | ×1 | 10,000 |
+| Hard | ×1.3 | ×1.25 | 12,500 |
+| Nighttime | ×1.6 | ×1.5 | 15,000 |
+| Impossible | ×2.0 | ×2 | 20,000 |
 
-Examples on Easy:
-- **Dorm (12 × 15 ft):** the scale is about 2.9 ft. A guess 1 ft off gets about 3,530 position points; 3 ft off gets about 1,770.
-- **Campus (default play area, about 3 km across):** the scale is about 450 m. A guess 50 m off gets about 4,470 points, 100 m off about 4,000, and 300 m off about 2,560. For a tougher campus game, lower `scaleFraction` (0.05 gives a scale of about 150 m) or shrink the play area.
+On campus (play area about 3 km across), the Easy scale is about 450 m. Being 50 m off gives about 4,470 position points; 100 m off gives about 4,000; 300 m off gives about 2,560.
 
 ## Project layout
 
 ```
-polyspot/
-├── server.js               starts HTTP (+HTTPS), binds 0.0.0.0, prints the LAN URLs
-├── src/
-│   ├── app.js              JSON API + static files (no framework)
-│   ├── store.js            data/db.json + data/photos/, seeding on first run
-│   ├── osm.js              building names from OpenStreetMap (Overpass API)
-│   └── net.js              finds the laptop's LAN IPs
-├── shared/                 used by the server AND the browser
-│   ├── scoring.config.js   ← all scoring knobs
-│   ├── scoring.js          scoring formulas
-│   └── geo.js              coordinate systems: floorplan {x,y} meters, latlng {lat,lng}
-├── public/
-│   ├── index.html, style.css
-│   ├── vendor/             Leaflet 1.9.4 (BSD-2), QR code generator (MIT), their license files
-│   └── js/
-│       ├── app.js          hash router
-│       ├── map/index.js    map adapter interface + registry
-│       ├── map/floorplan.js  SVG floor-plan adapter (to-scale rectangle)
-│       ├── map/leaflet.js  satellite/street map adapter (campus, lat/lng)
-│       ├── runtime.js      settings from the server (e.g. whether an Esri key is set)
-│       ├── compass.js      DeviceOrientation (iOS + Android)
-│       ├── photo.js        camera/file → resized JPEG
-│       ├── components.js   heading slider, difficulty chips, compass button…
-│       └── views/          home, host, play, results, rounds, map editor, about
-├── seed/                   sample map + round (copied to data/ on first run)
-├── scripts/                make-cert.js, reset.js, check-syntax.js
-├── test/                   node --test
-├── .github/workflows/      runs the tests and syntax check on every push
-├── LICENSE                 MIT
-└── THIRD_PARTY_NOTICES.md  libraries, map imagery/data terms, credits
+public/                     the website (published to GitHub Pages as-is)
+  index.html, style.css, config.js (your Supabase settings), icon.svg
+  shared/                   scoring, geometry, OpenStreetMap import (also used by tests)
+  js/
+    app.js                  app shell + router
+    backend.js, session.js, api.js   Supabase connection, sign-in, every database call
+    map/                    floorplan.js (SVG floor plans), leaflet.js (campus satellite map)
+    views/                  home, play, result, leaderboard, archive, account, legal, admin/*
+  vendor/                   Leaflet, supabase-js, qrcode-generator (+ their licenses)
+supabase/
+  schema.sql                tables, security rules, game logic, leaderboard (the backend)
+  storage.sql               photo storage rules
+  setup.sql                 everything combined, to paste into Supabase (generated)
+local/                      local mode: same SQL on PGlite, a stand-in for Supabase's API
+server.js                   npm start
+test/                       database, scoring, local server and file checks
+docs/SETUP.md               how to put it online
 ```
 
-### API
-
-| Method | Path | |
-|---|---|---|
-| GET/POST | `/api/maps` | list / create a map |
-| GET/PUT | `/api/maps/:id` | read / update a map |
-| POST | `/api/maps/:id/import-osm` | refresh a campus map's building names from OpenStreetMap (keeps your own labels) |
-| GET/POST | `/api/rounds` | list rounds (without the answer) / create (photo as a data URL) |
-| GET | `/api/rounds/today?date=YYYY-MM-DD` | newest round released on that date |
-| GET/DELETE | `/api/rounds/:id` | |
-| GET/POST | `/api/rounds/:id/guesses` | history (+ answer once guessed) / submit `{ pos, heading }` |
-
-### Map types
-
-Views never touch SVG or Leaflet directly. They call the map adapter interface in `public/js/map/index.js`, and scoring only calls `shared/geo.js`. Each map's `type` picks both:
-
-| `type` | Adapter | Positions | Heading 0° |
-|---|---|---|---|
-| `floorplan` | `map/floorplan.js` (SVG) | `{ x, y }` meters from the top-left corner | top of the plan |
-| `latlng` | `map/leaflet.js` (Leaflet) | `{ lat, lng }` | true north |
-
-A `latlng` map has a play area, `bounds: { sw, ne }`. To add another real place (say, a second campus), create one with the API or copy the campus entry in `data/db.json` with new bounds.
+**Security model:**
+- Every table is locked (row-level security on, no policies).
+- The site can only call database functions, and each one checks whether you're a guest, a signed-in player or an admin (by Google email, from the `admins` table).
+- The site's Content Security Policy only allows this site, Supabase and the map providers.
 
 ## Legal and licenses
 
-- **Code:** PolySpot is MIT-licensed ([`LICENSE`](LICENSE)). Bundled libraries keep their own licenses: Leaflet is BSD 2-Clause and qrcode-generator is MIT. Every component, service and credit is listed in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md), and the app shows the same under **Home → About & licenses**.
-- **Map credits:** the credits that map providers require show in the corner of the campus map. Leave them visible.
-- **Default satellite imagery** comes from **USGS The National Map** (U.S. government aerial photos). It needs no account and has no use restrictions; just keep the credit. It's sharp enough to see buildings, paths and parking lots, but blurry at the closest zoom.
-- **Sharper imagery (optional): Esri World Imagery.** Esri requires an account for this.
-  1. Create a free ArcGIS Location Platform account at [developers.arcgis.com](https://developers.arcgis.com).
-  2. Create an API key with the *Basemaps* privilege. Restrict it to your own use.
-  3. Start the server with the key:
-     - macOS/Linux: `ESRI_API_KEY=your_key npm start`
-     - Windows PowerShell: `$env:ESRI_API_KEY="your_key"; npm start`
+- **Code:** MIT ([`LICENSE`](LICENSE)). Bundled libraries keep their licenses: Leaflet (BSD-2), supabase-js (MIT), qrcode-generator (MIT). Full list, with map imagery and data terms, in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md). The site shows them under **About & credits**.
+- **Privacy policy and terms of use** are built into the site (`#/privacy`, `#/terms`). Google requires them for sign-in, and they cover California privacy law (CCPA). Put a contact email in `public/config.js` so they're complete.
+- **Map credits** appear on the map automatically. Don't hide them.
+- **Not affiliated:** PolySpot is an independent student project, not endorsed by Cal Poly Pomona, the CSU, or GeoGuessr. It uses no university logos. Keep university marks out of any domain name.
+- **Photos:**
+  - Only use photos you took.
+  - Avoid people, ID cards, license plates and room numbers.
+  - Don't go into closed areas.
+  - Remove a photo if someone asks.
+- **Growing up:** the free OpenStreetMap tile server and Esri's free tier aren't meant for big or commercial sites. If PolySpot gets popular or makes money, move to a paid map provider and review each provider's terms.
 
-  A "Satellite (Esri)" layer appears and becomes the default. Stay within Esri's free-tier limits and terms.
-- **Street map and building names** come from OpenStreetMap:
-  - The tile server is for light, normal browser use. No bulk or offline downloading.
-  - Building names are under the [ODbL](https://www.openstreetmap.org/copyright). Fine to use in the app with credit. If you publish them (e.g. share `data/db.json`), credit OpenStreetMap and share them under the ODbL.
-- **Not affiliated:** PolySpot is an independent project. It is not affiliated with or endorsed by Cal Poly Pomona, the CSU, or GeoGuessr, and it uses none of their logos or content.
-- **Before going public** (a real website, many players, ads or payments): move off OpenStreetMap's tile server and Esri's free tier to a paid or self-hosted tile provider, and check every provider's current terms. The summary here is a good-faith guide for a personal project, not legal advice.
+This is a good-faith summary for a free student project, not legal advice.
 
-### Photos and privacy
-- Photos and guesses stay on the host's laptop. Uploads are shrunk and their EXIF/GPS location data is removed.
-- Only upload photos you took or have permission to use.
-- Leave out people who haven't agreed, ID cards, screens and room numbers.
-- Ask roommates before photographing shared rooms, and follow University Housing rules.
+## Next steps
 
-## Suggested next steps
-
-1. **Offline campus map:** serve the play area's imagery from the laptop, built from USGS/NAIP downloads (public domain) rather than by scraping tile servers, so the campus works without internet.
-2. **Daily release:** hide rounds dated in the future from players, allow one scored guess per day per player (practice guesses unscored), and add a countdown to the next round. `date` is already stored and `/api/rounds/today` exists.
-3. **Players and leaderboard:** start with a nickname stored on the phone (no accounts), then daily/weekly leaderboards and streaks.
-4. **Multiplayer:** add a room code, then everyone guesses the same round on their own phone, and results show all guesses together (WebSocket or polling).
-5. **Hosting for friends:** run it on a small always-on box (Raspberry Pi) or a cheap VPS with real HTTPS, and move storage to SQLite.
-6. **Better photos:** pinch-zoom, an optional time limit, and blur tools for faces and room numbers.
-7. **Host tools:** edit or move a round after saving, preview the score heat-map, and back up/restore `data/`.
+1. **Streaks and stats:** daily streak, personal best, average by difficulty.
+2. **Hints:** an optional hint that costs points (e.g. "near a parking lot").
+3. **Notifications:** an installable app (PWA) with a daily reminder.
+4. **Friends leagues:** private leaderboards with a join code.
+5. **Offline campus map:** serve the play area's imagery from the site itself (from USGS downloads) instead of tile servers.
+6. **Moderation log:** record admin actions (hidden names, deleted rounds).

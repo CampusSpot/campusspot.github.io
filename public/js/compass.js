@@ -6,7 +6,7 @@
 //   iPhone (Safari): needs HTTPS + a permission prompt (DeviceOrientationEvent.requestPermission),
 //                    heading comes from event.webkitCompassHeading.
 //   Android (Chrome): needs HTTPS, uses the 'deviceorientationabsolute' event.
-import { norm360 } from '/shared/geo.js';
+import { norm360 } from '../shared/geo.js';
 
 const rad = d => (d * Math.PI) / 180;
 

@@ -1,0 +1,8 @@
+{
+  "_comment": "Leaderboard names containing any of these (after removing spaces and symbols, lowercased) are refused. Admins can also hide names on the Players page. Rebuild with: npm run build:sql",
+  "names": [
+    "admin", "moderator", "official", "polyspot", "staff",
+    "fuck", "fuk", "shit", "bitch", "cunt", "dick", "cock", "pussy", "penis", "vagina", "porn",
+    "nigg", "fag", "retard", "whore", "slut", "rape", "nazi", "hitler", "kkk", "chink", "spic", "kike", "tranny"
+  ]
+}

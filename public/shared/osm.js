@@ -1,6 +1,7 @@
 // Building and landmark names from OpenStreetMap (Overpass API), used as labels on a campus map.
-// Runs on the laptop's server, so it needs internet once; the labels are then stored in data/db.json.
-const ENDPOINTS = (process.env.OVERPASS_URL || 'https://overpass-api.de/api/interpreter,https://overpass.kumi.systems/api/interpreter').split(',');
+// Runs in an admin's browser when they tap "Import building names". The names are ODbL data:
+// they are credited on the map and in THIRD_PARTY_NOTICES.md.
+const ENDPOINTS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
 const MAX_FEATURES = 300;
 
 export function overpassQuery({ sw, ne }) {
@@ -42,22 +43,21 @@ export function parseOverpass(json) {
     seen.add(key);
     out.push({ id: `osm-${el.type[0]}${el.id}`, label, kind: kindFor(t), source: 'osm', pos: { lat, lng } });
   }
-  // buildings first, so they survive the cap
-  const order = { building: 0, place: 1, parking: 2 };
+  const order = { building: 0, place: 1, parking: 2 }; // buildings first, so they survive the cap
   return out.sort((a, b) => order[a.kind] - order[b.kind]).slice(0, MAX_FEATURES);
 }
 
-export async function fetchOsmFeatures(bounds, fetchImpl = fetch) {
+export async function fetchOsmFeatures(bounds, { fetchImpl = fetch, endpoints = ENDPOINTS } = {}) {
   let lastError;
-  for (const url of ENDPOINTS) {
+  for (const url of endpoints) {
     try {
       const res = await fetchImpl(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'PolySpot/0.1 (local campus photo game)' },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ data: overpassQuery(bounds) }),
         signal: AbortSignal.timeout(45_000),
       });
-      if (!res.ok) throw new Error(`${url} answered ${res.status}`);
+      if (!res.ok) throw new Error(`${new URL(url).host} answered ${res.status}`);
       return parseOverpass(await res.json());
     } catch (err) {
       lastError = err;

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { overpassQuery, parseOverpass, fetchOsmFeatures } from '../src/osm.js';
+import { overpassQuery, parseOverpass, fetchOsmFeatures } from '../public/shared/osm.js';
 
 const sample = {
   elements: [
@@ -28,11 +28,11 @@ test('query uses the play area (south, west, north, east)', () => {
 
 test('fetchOsmFeatures falls back across endpoints and reports failure', async () => {
   let calls = 0;
-  const ok = await fetchOsmFeatures({ sw: { lat: 1, lng: 2 }, ne: { lat: 3, lng: 4 } }, async () => {
+  const ok = await fetchOsmFeatures({ sw: { lat: 1, lng: 2 }, ne: { lat: 3, lng: 4 } }, { fetchImpl: async () => {
     calls++;
     if (calls === 1) throw new Error('down');
     return { ok: true, json: async () => sample };
-  });
+  } });
   assert.equal(ok.length, 4);
-  await assert.rejects(fetchOsmFeatures({ sw: { lat: 1, lng: 2 }, ne: { lat: 3, lng: 4 } }, async () => ({ ok: false, status: 504 })), /OpenStreetMap/);
+  await assert.rejects(fetchOsmFeatures({ sw: { lat: 1, lng: 2 }, ne: { lat: 3, lng: 4 } }, { fetchImpl: async () => ({ ok: false, status: 504 }) }), /OpenStreetMap/);
 });

@@ -1,20 +1,24 @@
-// Map editor.
-//   Floor plan: a rectangle (width × length, feet or meters) plus labeled reference features.
+// Admin: map editor.
 //   Campus (real-world) map: play area, building labels imported from OpenStreetMap, your own labels.
-import { api } from '../api.js';
-import { card, compassControl, page } from '../components.js';
-import { createMapView } from '../map/index.js';
-import { FT, fromUnit, toUnit } from '../units.js';
-import { h, toast } from '../ui.js';
+//   Floor plan: a rectangle (width × length, feet or meters) plus labeled reference features,
+//   for indoor rounds (a building lobby, a lab…).
+import { fetchOsmFeatures } from '../../../shared/osm.js';
+import { api } from '../../api.js';
+import { card, compassControl, pageHeader } from '../../components.js';
+import { createMapView } from '../../map/index.js';
+import { FT, fromUnit, toUnit } from '../../units.js';
+import { btn, h, toast } from '../../ui.js';
+import { adminNav } from './common.js';
 
 const QUICK_FEATURES = ['Door', 'Bed', 'Desk', 'Window', 'Closet'];
 const newMap = () => ({ name: 'New room', type: 'floorplan', units: 'ft', width: 12 * FT, length: 15 * FT, topBearing: null, features: [] });
 
-export async function mapEditor(root, id) {
+export async function adminMaps(root, id) {
   const maps = await api.maps();
   const source = id ? maps.find(m => m.id === id) : maps[0];
   const m = id === 'new' || !source ? newMap() : structuredClone(source);
-  const main = page(root, m.id ? 'Edit map' : 'New room map');
+  root.append(adminNav(), pageHeader(m.id ? 'Maps' : 'New indoor map', { sub: 'Players see these maps when they guess.' }));
+  const main = root;
   const box = h('div', { class: 'map-box' });
   const hint = h('p', { class: 'hint' });
   let view;
@@ -63,8 +67,8 @@ export async function mapEditor(root, id) {
       label.addEventListener('input', () => { f.label = label.value; view.setMap(m); });
       return h('li', {},
         label,
-        h('button', { type: 'button', class: 'btn small', onclick: () => place(f) }, '📍 Move'),
-        h('button', { type: 'button', class: 'btn small danger', 'aria-label': `Remove ${f.label}`, onclick: () => { m.features = m.features.filter(x => x !== f); redraw(); } }, '✕'));
+        btn('Move', { icon: 'pin', class: 'small', onclick: () => place(f) }),
+        btn('', { icon: 'x', class: 'small danger', 'aria-label': `Remove ${f.label}`, onclick: () => { m.features = m.features.filter(x => x !== f); redraw(); } }));
     }));
     if (!m.features.length) featureList.append(h('li', { class: 'muted small' }, 'No labels yet.'));
   }
@@ -73,9 +77,9 @@ export async function mapEditor(root, id) {
     if (m.type === 'floorplan' && !(m.width > 0 && m.length > 0)) return toast('Enter a width and a length', 'error');
     try {
       compass?.stop();
-      const saved = await api.saveMap({ ...m, name: m.name || 'Untitled map' });
+      const saved = await api.admin.saveMap({ ...m, name: m.name || 'Untitled map' });
       Object.assign(m, saved);
-      history.replaceState(null, '', `#/map/${saved.id}`);
+      history.replaceState(null, '', `#/admin/maps/${saved.id}`);
       if (!quiet) toast('Map saved');
       return saved;
     } catch (err) { toast(err.message, 'error'); }
@@ -83,28 +87,29 @@ export async function mapEditor(root, id) {
 
   let compass = null;
   const top = h('div', { class: 'row wrap' },
-    maps.length > 1 ? h('select', { 'aria-label': 'Choose map', onchange: e => (location.hash = `#/map/${e.target.value}`) },
+    maps.length > 1 ? h('select', { 'aria-label': 'Choose map', onchange: e => (location.hash = `#/admin/maps/${e.target.value}`) },
       maps.map(x => h('option', { value: x.id, selected: x.id === m.id }, x.name))) : null,
-    h('a', { class: 'btn small', href: '#/map/new' }, '+ New room map'));
+    btn('New indoor map', { href: '#/admin/maps/new', icon: 'plus', class: 'small' }));
 
   if (m.type === 'latlng') {
     // ── campus map ──
     hint.textContent = 'Satellite view. Switch to the street map or hide labels with the layers button. The dashed box is the play area.';
-    const importBtn = h('button', { type: 'button', class: 'btn' }, '⬇ Import building names from OpenStreetMap');
+    const importBtn = btn(m.osmImportedAt ? 'Re-import building names' : 'Import building names from OpenStreetMap', { icon: 'layers', class: m.osmImportedAt ? '' : 'primary' });
     const importStatus = h('p', { class: 'small muted' }, m.osmImportedAt
       ? `Last imported ${new Date(m.osmImportedAt).toLocaleString()}.`
-      : 'Not imported yet (the server tries automatically when it starts with internet).');
+      : 'Not imported yet. Do this once so players see building names.');
     importBtn.addEventListener('click', async () => {
       importBtn.disabled = true;
       importStatus.textContent = 'Asking OpenStreetMap… (can take 30 s)';
       try {
+        const osm = await fetchOsmFeatures(m.bounds);
+        m.features = [...osm, ...m.features.filter(f => f.source !== 'osm')];
+        m.osmImportedAt = new Date().toISOString();
         if (!(await save({ quiet: true }))) throw new Error('Save failed');
-        const { added, map: updated } = await api.importOsm(m.id);
-        Object.assign(m, updated);
         redraw();
-        importStatus.textContent = `Imported ${added} names. Your own labels were kept.`;
+        importStatus.textContent = `Imported ${osm.length} names and saved. Your own labels were kept.`;
       } catch (err) {
-        importStatus.textContent = `${err.message}. Check the laptop’s internet connection.`;
+        importStatus.textContent = `${err.message}. Check your internet connection and try again.`;
       } finally { importBtn.disabled = false; }
     });
     main.append(
@@ -115,17 +120,16 @@ export async function mapEditor(root, id) {
       hint,
       box,
       h('div', { class: 'row wrap' },
-        h('button', {
-          type: 'button', class: 'btn small',
-          onclick: () => { m.bounds = view.currentBounds(); redraw(); toast('Play area set to the current view. Save to keep it.'); },
-        }, '⬚ Use current view as play area')),
+        btn('Use current view as play area', { icon: 'map', class: 'small',
+          onclick: () => { m.bounds = view.currentBounds(); redraw(); toast('Play area set to the current view. Save to keep it.'); } })),
       card(h('h2', {}, 'Building names'), importBtn, importStatus),
       h('details', { class: 'card', open: m.features.length <= 15 },
         h('summary', {}, 'Labels', featureCount),
         h('p', { class: 'small muted' }, 'Rename, move or remove labels, or add your own (e.g. “Fountain”, “Rose Garden”).'),
+        h('p', { class: 'small muted' }, 'Building names are © OpenStreetMap contributors (ODbL); the map credits them automatically.'),
         h('div', { class: 'chips' }, h('button', { type: 'button', class: 'chip', onclick: () => addFeature('') }, '+ Add label')),
         featureList),
-      h('div', { class: 'sticky-actions' }, h('button', { type: 'button', class: 'btn primary block', onclick: () => save() }, 'Save map')),
+      h('div', { class: 'sticky-actions' }, btn('Save map', { icon: 'check', class: 'primary block', onclick: () => save() })),
     );
   } else {
     // ── floor plan ──
@@ -156,7 +160,7 @@ export async function mapEditor(root, id) {
       redraw();
     });
     compass = compassControl({
-      label: '🧭 Measure with phone compass',
+      label: 'Measure with phone compass',
       onHeading: deg => { topBearing.value = deg; m.topBearing = deg; view.setMap(m); },
     });
     main.append(
@@ -180,7 +184,7 @@ export async function mapEditor(root, id) {
         h('p', { class: 'small muted' }, 'Which compass direction does the top edge of the map face? Needed only if you use the phone compass to set headings. Stand inside, point the back camera at the top wall, then lock.'),
         h('label', { class: 'field' }, h('span', {}, 'Top of map faces (°, 0 = north)'), topBearing),
         compass.el),
-      h('div', { class: 'sticky-actions' }, h('button', { type: 'button', class: 'btn primary block', onclick: () => save() }, 'Save map')),
+      h('div', { class: 'sticky-actions' }, btn('Save map', { icon: 'check', class: 'primary block', onclick: () => save() })),
     );
   }
 

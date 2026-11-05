@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { angleError, bearing, clampPos, distance, mapSpan, norm360 } from '../shared/geo.js';
+import { angleError, bearing, clampPos, distance, mapSpan, norm360 } from '../public/shared/geo.js';
 
 const room = { type: 'floorplan', width: 4, length: 3 };
 const campus = { type: 'latlng', bounds: { sw: { lat: 34.05, lng: -117.83 }, ne: { lat: 34.065, lng: -117.81 } } };

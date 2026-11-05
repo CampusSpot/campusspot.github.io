@@ -19,3 +19,11 @@ export async function fileToJpeg(file, maxSide = 1800, quality = 0.85) {
     URL.revokeObjectURL(url);
   }
 }
+
+/** The bytes of a data: URL (for uploading), without fetch() so the page's security policy stays strict. */
+export function dataUrlToBytes(dataUrl) {
+  const bin = atob(dataUrl.slice(dataUrl.indexOf(',') + 1));
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}

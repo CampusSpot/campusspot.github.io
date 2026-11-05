@@ -2,7 +2,7 @@
   "name": "polyspot",
   "version": "0.1.0",
   "private": true,
-  "description": "Photo-location guessing game for Cal Poly Pomona: guess where a photo was taken and which way the camera faced. Runs locally; play from your phone.",
+  "description": "Daily campus photo game for Cal Poly Pomona: guess where a photo was taken and which way the camera faced.",
   "keywords": [
     "game",
     "photo",
@@ -27,9 +27,17 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
+    "local": "node server.js --local",
     "test": "node --test",
-    "cert": "node scripts/make-cert.js",
-    "reset": "node scripts/reset.js",
-    "check": "node scripts/check-syntax.js"
+    "check": "node scripts/check-syntax.js",
+    "build:sql": "node scripts/build-sql.js",
+    "vendor": "node scripts/vendor.js",
+    "cert": "node scripts/make-cert.js"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.15"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.119.0"
   }
 }

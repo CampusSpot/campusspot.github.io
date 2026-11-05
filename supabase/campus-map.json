@@ -1,0 +1,8 @@
+{
+  "type": "latlng",
+  "name": "Cal Poly Pomona campus",
+  "units": "ft",
+  "bounds": { "sw": { "lat": 34.048, "lng": -117.832 }, "ne": { "lat": 34.066, "lng": -117.808 } },
+  "topBearing": 0,
+  "features": []
+}

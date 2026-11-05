@@ -1,6 +1,6 @@
 // Floor-plan map adapter: draws a rectangle to scale in SVG. Positions are { x, y } meters from the
 // top-left corner. See ./index.js for the interface every adapter implements.
-import { bearing, clampPos, distance, mapSpan } from '/shared/geo.js';
+import { bearing, clampPos, distance, mapSpan } from '../../shared/geo.js';
 import { formatLength, gridStep } from '../units.js';
 
 const NS = 'http://www.w3.org/2000/svg';

@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { lanAddresses } from '../src/net.js';
+import { lanAddresses } from '../local/net.js';
 
 const dir = fileURLToPath(new URL('../certs', import.meta.url));
 fs.mkdirSync(dir, { recursive: true });

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import config from '../shared/scoring.config.js';
-import { maxScore, positionScale, scoreGuess } from '../shared/scoring.js';
+import config from '../public/shared/scoring.config.js';
+import { maxScore, positionScale, scoreGuess } from '../public/shared/scoring.js';
 
 const room = { type: 'floorplan', width: 3, length: 4 }; // diagonal 5 m
 const truth = { pos: { x: 1, y: 1 }, heading: 90 };
