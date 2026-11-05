@@ -2,17 +2,34 @@
   "name": "polyspot",
   "version": "0.1.0",
   "private": true,
-  "description": "Guess where a photo was taken and which way the camera faced. Local prototype on a dorm-room floor plan.",
+  "description": "Photo-location guessing game for Cal Poly Pomona: guess where a photo was taken and which way the camera faced. Runs locally; play from your phone.",
+  "keywords": [
+    "game",
+    "photo",
+    "map",
+    "leaflet",
+    "campus",
+    "cal-poly-pomona"
+  ],
+  "homepage": "https://github.com/Rassa1/polyspot#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rassa1/polyspot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Rassa1/polyspot/issues"
+  },
+  "license": "MIT",
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test": "node --test \"test/*.test.js\"",
     "cert": "node scripts/make-cert.js",
-    "reset": "node scripts/reset.js"
-  },
-  "engines": {
-    "node": ">=20"
-  },
-  "license": "MIT"
+    "reset": "node scripts/reset.js",
+    "check": "node scripts/check-syntax.js"
+  }
 }

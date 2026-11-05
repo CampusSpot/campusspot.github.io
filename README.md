@@ -1,5 +1,7 @@
 # PolySpot
 
+[![Tests](https://github.com/Rassa1/polyspot/actions/workflows/test.yml/badge.svg)](https://github.com/Rassa1/polyspot/actions/workflows/test.yml)
+
 A photo-location guessing game for Cal Poly Pomona. The host takes one photo and marks where they stood and which way the camera faced. The player looks at the photo, taps a spot on the map and aims an arrow. The game scores both the position and the direction.
 
 There are two maps:
@@ -10,7 +12,9 @@ It runs on your laptop, and your phone can play it over the same Wi-Fi. There ar
 
 **Internet:** the campus map's satellite/street tiles load from USGS and OpenStreetMap (or Esri, if you add a key) on whichever device shows the map. Building names are downloaded once by the laptop. The dorm floor plan works fully offline.
 
-![Play → results](docs/screens.png)
+![Photo → guess → results (on the dorm floor plan)](docs/screens.png)
+
+**Contents:** [Run it](#run-it) · [Troubleshooting](#troubleshooting) · [Phone compass](#phone-compass-optional-and-https) · [How to play](#how-to-play) · [Scoring](#scoring) · [Project layout](#project-layout) · [Legal](#legal-and-licenses) · [Next steps](#suggested-next-steps)
 
 ## Run it
 
@@ -45,19 +49,26 @@ Press **Ctrl+C** to stop the server. Stop it before starting a new one, or the o
 - **Laptop:** open `http://localhost:3000`.
 - **Phone:** join the same Wi-Fi as the laptop and open the "On your phone" address. You can also scan the QR code shown on the laptop's home page.
 
-The first run loads sample data: the campus map, a 12 × 15 ft dorm-room map, and a practice round in the dorm (under **All rounds**). On start, the server also fetches campus building names from OpenStreetMap (it prints `Loaded N building/place names…`). If the laptop was offline, it retries on the next start, or you can use **Edit map → Import building names**.
+The first run loads sample data: the campus map, a 12 × 15 ft dorm-room map, and a practice round in the dorm (under **All rounds**). On start, the server also fetches campus building names from OpenStreetMap (it prints `Loaded N building/place names…`). If the laptop was offline, it retries on the next start, or you can use **🗺 Campus map → Import building names**.
 
 | Command | What it does |
 |---|---|
 | `npm start` | Start the server (HTTP on 3000, and HTTPS on 3443 if certs exist) |
 | `npm run dev` | Same, restarting when files change |
-| `npm test` | Run the tests (scoring, geometry, API) |
+| `npm test` | Run the tests (scoring, geometry, API, OpenStreetMap import) |
+| `npm run check` | Syntax-check every JavaScript file (also runs on GitHub for each push) |
 | `npm run cert` | Make HTTPS certificates for the phone compass (see below) |
 | `npm run reset` | Delete all local data. The next start loads the sample again |
 
 You can change the defaults with environment variables `PORT`, `HTTPS_PORT`, `HOST` (default `0.0.0.0`) and `DATA_DIR`. `ESRI_API_KEY` turns on sharper satellite imagery (see [Legal](#legal-and-licenses)).
 
-### Phone can't connect?
+### Troubleshooting
+- **"Port 3000 is already in use"** (or the page still shows an old version): an older server is still running. Stop it, then `npm start` again.
+  - Windows PowerShell: `Get-NetTCPConnection -LocalPort 3000 | % { Stop-Process -Id $_.OwningProcess -Force }`
+  - macOS/Linux: `lsof -ti :3000 | xargs kill`
+- **"Cannot find path" / "not a git repository":** you're in the wrong folder. Run `cd ~/polyspot` first. A new PowerShell window starts in your user folder, or in `C:\Windows\system32` if you opened it as Administrator.
+
+**Phone can't connect?**
 - **Firewall:** let Node accept incoming connections. macOS and Windows ask the first time; if you clicked "Deny", allow it in the firewall settings.
 - **Campus/dorm Wi-Fi often blocks device-to-device traffic** (client isolation). If the phone times out, turn on your phone's hotspot, connect the laptop to it, restart, and use the new address it prints.
 - Use the `192.168…` / `10.…` address, not `localhost`. `localhost` on the phone means the phone itself.
@@ -75,21 +86,21 @@ Browsers only allow the compass on secure pages. `http://localhost` counts as se
    - **Android only, no certs:** in Chrome open `chrome://flags/#unsafely-treat-insecure-origin-as-secure`, add `http://192.168.x.x:3000` and relaunch.
 3. If your laptop's IP changes (a new network), run `npm run cert` again.
 
-**Map alignment.** A compass gives degrees from north, but "up" on your floor plan probably isn't north. In **Edit map → Compass alignment**, stand inside, point the camera at the top wall of the map and lock. After that, compass readings convert to map headings. Indoor compasses are often off by 10–20° because of steel and electronics, so fine-tune with the slider.
+**Map alignment.** A compass gives degrees from north, but "up" on your floor plan probably isn't north. Open **🗺 Campus map**, switch the dropdown to **My dorm room**, open **Compass alignment**, stand inside, point the camera at the top wall of the map and lock. After that, compass readings convert to map headings. Indoor compasses are often off by 10–20° because of steel and electronics, so fine-tune with the slider.
 
 ## How to play
 
-1. **Edit the map** (`📐`). Use the dropdown at the top to switch maps.
+1. **Maps** (`🗺 Campus map` on the home page). The dropdown at the top switches between the campus and your dorm floor plan.
    - **Campus:** the dashed box is the play area; guesses can't go outside it. Pan or zoom to the area you want, then tap **Use current view as play area**. Re-import or rename building labels, add your own (a fountain, a garden…), and choose feet or meters for distances. The layers button switches between satellite and street map and hides labels. Labels appear as you zoom in.
    - **Dorm floor plan:** enter width and length in feet or meters (there's a toggle). The plan is drawn to scale with a grid. Add labeled features (door, bed, desk…) and tap where each one is.
 2. **Host a round** (`📷`):
    - Take a photo (opens the camera) or choose one. The photo is shrunk to about 0.5 MB in the browser and its EXIF/GPS data is removed.
-   - Pick the map (the app remembers your last choice).
+   - The campus map is selected. Pick **My dorm room** in the dropdown for indoor rounds.
    - **Campus:** pinch to zoom, **tap where you stood**, then drag the **white ring** to aim. Drag the dot to move it.
    - **Floor plan:** **tap where you stood and drag toward where the camera pointed**. Drag the dot to move it, or the arrow tip to re-aim it.
    - On either map, the slider and the ⟲/⟳ buttons fine-tune the direction. On campus, north is up, so the phone compass needs no alignment.
    - Pick a difficulty (Easy, Hard, Nighttime or Impossible) and a release date (default today). Then save.
-3. **Play** (`▶`): this opens today's round. The full list under **All rounds** lets you pick any round for testing. The photo shows full screen (tap it to zoom). Tap **Guess on map →**, place yourself and aim the same way as the host, then submit.
+3. **Play** (`▶`): this opens today's round. If none is released today, it offers to host one. The full list under **All rounds** lets you pick any round for testing. The photo shows full screen (tap it to zoom). Tap **Guess on map →**, place yourself and aim the same way as the host, then submit.
 4. **Results:** the map zooms to show both positions and both view cones, with a dashed line between the positions. You also get the distance error, the angle error (shortest difference, 0–180°), the points, and your guess history for that round. Tap a past guess to see it on the map.
 
 The answer never leaves the server until a guess has been made for that round.
@@ -138,13 +149,15 @@ polyspot/
 │       ├── map/index.js    map adapter interface + registry
 │       ├── map/floorplan.js  SVG floor-plan adapter (to-scale rectangle)
 │       ├── map/leaflet.js  satellite/street map adapter (campus, lat/lng)
+│       ├── runtime.js      settings from the server (e.g. whether an Esri key is set)
 │       ├── compass.js      DeviceOrientation (iOS + Android)
 │       ├── photo.js        camera/file → resized JPEG
 │       ├── components.js   heading slider, difficulty chips, compass button…
-│       └── views/          home, host, play, results, rounds, map editor
+│       └── views/          home, host, play, results, rounds, map editor, about
 ├── seed/                   sample map + round (copied to data/ on first run)
-├── scripts/                make-cert.js, reset.js
+├── scripts/                make-cert.js, reset.js, check-syntax.js
 ├── test/                   node --test
+├── .github/workflows/      runs the tests and syntax check on every push
 ├── LICENSE                 MIT
 └── THIRD_PARTY_NOTICES.md  libraries, map imagery/data terms, credits
 ```

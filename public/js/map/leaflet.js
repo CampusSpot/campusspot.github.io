@@ -85,7 +85,7 @@ export function createLeafletView(container, initialMap) {
     L.polygon([ll(point), ll(left), ll(right)], { color: c, weight: 1, fillColor: c, fillOpacity: 1, interactive: false }).addTo(layer);
   }
 
-  function label(layer, text, color, side) {
+  function label(layer, text, side) {
     const tip = L.tooltip({ permanent: true, direction: side === 'left' ? 'left' : 'right', offset: [side === 'left' ? -10 : 10, 0], className: 'pose-tip', interactive: false });
     tip.setContent(text);
     tip.setLatLng(layer.getLatLng());
@@ -98,7 +98,7 @@ export function createLeafletView(container, initialMap) {
       if (!p.pos) continue;
       if (p.heading != null) drawShapes(poseLayer, p);
       const dot = L.circleMarker(ll(p.pos), { radius: 8, color: '#fff', weight: 3, fillColor: cssColor(p.color), fillOpacity: 1, interactive: false }).addTo(poseLayer);
-      if (p.label) label(dot, p.label, p.color, p.labelSide).addTo(poseLayer).getElement().style.color = cssColor(p.color);
+      if (p.label) label(dot, p.label, p.labelSide).addTo(poseLayer).getElement().style.color = cssColor(p.color);
     }
   }
 

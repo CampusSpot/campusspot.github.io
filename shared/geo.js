@@ -58,7 +58,6 @@ function sys(map) {
   return s;
 }
 
-export const mapTypes = Object.keys(systems);
 /** True if `p` is a well-formed position for this map (it may still be outside the map). */
 export const isValidPos = (map, p) => sys(map).isPos(p);
 /** Distance between two positions, in meters. */

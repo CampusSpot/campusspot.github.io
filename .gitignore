@@ -1,2 +1,9 @@
 data/
 certs/*.pem
+
+# OS / editor clutter
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
