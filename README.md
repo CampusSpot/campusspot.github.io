@@ -1,6 +1,6 @@
 # PolySpot
 
-[![Tests](https://github.com/Rassa1/polyspot/actions/workflows/test.yml/badge.svg)](https://github.com/Rassa1/polyspot/actions/workflows/test.yml)
+[![Tests](https://github.com/Rassa1/broncoguesser/actions/workflows/test.yml/badge.svg)](https://github.com/Rassa1/broncoguesser/actions/workflows/test.yml)
 
 A daily photo game for Cal Poly Pomona. Every day there's one photo taken somewhere on campus: players guess **where the photographer stood** and **which way the camera faced**, then see how close they were and where they rank.
 
@@ -21,8 +21,8 @@ You need [Git](https://git-scm.com) and [Node.js](https://nodejs.org) 22 or newe
 
 ```bash
 cd ~
-git clone https://github.com/Rassa1/polyspot.git
-cd polyspot
+git clone https://github.com/Rassa1/broncoguesser.git
+cd broncoguesser
 npm install
 npm start
 ```
@@ -47,7 +47,7 @@ Open `http://localhost:3000`. On your phone (same Wi-Fi), open the `http://192.1
 - **"Port 3000 is already in use":** an older copy is still running. Stop it, then start again.
   - Windows PowerShell: `Get-NetTCPConnection -LocalPort 3000 | % { Stop-Process -Id $_.OwningProcess -Force }`
   - macOS/Linux: `lsof -ti :3000 | xargs kill`
-- **"Cannot find path" / "not a git repository":** run `cd ~/polyspot` first.
+- **"Cannot find path" / "not a git repository":** run `cd ~/broncoguesser` first.
 - **Phone can't connect:** allow Node through the firewall (private networks). Campus Wi-Fi often blocks device-to-device traffic; use your phone's hotspot for the computer instead.
 - **To start over in local mode:** stop the server and delete the `data` folder.
 

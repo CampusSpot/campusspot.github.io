@@ -11,13 +11,13 @@
     "campus",
     "cal-poly-pomona"
   ],
-  "homepage": "https://github.com/Rassa1/polyspot#readme",
+  "homepage": "https://github.com/Rassa1/broncoguesser#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Rassa1/polyspot.git"
+    "url": "git+https://github.com/Rassa1/broncoguesser.git"
   },
   "bugs": {
-    "url": "https://github.com/Rassa1/polyspot/issues"
+    "url": "https://github.com/Rassa1/broncoguesser/issues"
   },
   "license": "MIT",
   "type": "module",
