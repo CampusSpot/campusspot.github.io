@@ -377,3 +377,9 @@ input:focus, select:focus { border-color: var(--guess); outline: none; box-shado
 .review-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
 .review-item { display: grid; gap: 10px; }
 .review-item .preview { max-height: 320px; object-fit: cover; }
+.choices { display: grid; gap: 8px; margin: 12px 0; }
+.choice { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.choice:has(input:checked) { border-color: var(--text); }
+.choice > span { display: grid; gap: 2px; flex: 1; }
+.choice input[type=date] { margin-top: 6px; width: 100%; }
+.choice input[type=date]:disabled { opacity: 0.5; }

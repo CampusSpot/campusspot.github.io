@@ -31,6 +31,7 @@ export const api = {
     admins: () => rpc('admin_list_admins'),
     reviewQueue: () => rpc('admin_review_queue'),
     approve: (id, date = null) => rpc('admin_approve_round', { p_id: id, p_date: date }),
+    store: id => rpc('admin_store_round', { p_id: id }),
     reject: (id, note) => rpc('admin_reject_round', { p_id: id, p_note: note }),
     contributors: () => rpc('admin_contributors'),
     setContributor: (userId, status) => rpc('admin_set_contributor', { p_user: userId, p_status: status }),

@@ -274,11 +274,22 @@ test('contributors: request, approval, submissions, review queue and scheduling'
   assert.ok(a2.date > a1.date, 'second approval goes on a later day');
   await rejects(db.rpc('admin_approve_round', { p_id: s1.id }, as('admin')), /no longer waiting/);
 
+  // storage: approved but unscheduled, then scheduled on a chosen day
+  const st = await db.rpc('admin_store_round', { p_id: s3.id }, as('admin'));
+  assert.equal(st.status, 'stored');
+  assert.equal(st.date, null);
+  assert.equal((await db.rpc('admin_review_queue', {}, as('admin')))[0].status, 'stored');
+  assert.ok(!(await db.rpc('list_rounds', { p_include_scheduled: true }, as('admin'))).some(r => r.id === s3.id), 'stored rounds are not scheduled');
+  await rejects(db.rpc('admin_approve_round', { p_id: s3.id, p_date: '2000-01-01' }, as('admin')), /today or a later day/);
+  const s4 = await db.rpc('submit_round', { p: { ...photo, title: 'Eve 4' } }, as('eve'));
+  const custom = await db.rpc('admin_approve_round', { p_id: s4.id, p_date: '2099-03-04' }, as('admin'));
+  assert.equal(custom.date, '2099-03-04');
+
   const path = await db.rpc('admin_reject_round', { p_id: s3.id, p_note: 'Too blurry' }, as('admin'));
   assert.match(path, /\.jpg$/);
   const mine = await db.rpc('my_submissions', {}, as('eve'));
-  assert.deepEqual(mine.map(r => [r.title, r.status]), [['Eve 3', 'rejected'], ['Eve 2', 'published'], ['Eve 1', 'published']]);
-  assert.equal(mine[0].reviewNote, 'Too blurry');
+  assert.deepEqual(mine.map(r => [r.title, r.status]), [['Eve 4', 'published'], ['Eve 3', 'rejected'], ['Eve 2', 'published'], ['Eve 1', 'published']]);
+  assert.equal(mine[1].reviewNote, 'Too blurry');
   assert.deepEqual(await db.rpc('admin_review_queue', {}, as('admin')), []);
 
   // denied contributors can't submit

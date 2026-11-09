@@ -43,9 +43,9 @@ create table if not exists public.rounds (
 alter table public.rounds add column if not exists status text not null default 'published';
 alter table public.rounds add column if not exists review_note text;
 alter table public.rounds alter column release_date drop not null;
-do $$ begin
-  alter table public.rounds add constraint rounds_status_valid check (status in ('pending', 'published', 'rejected'));
-exception when duplicate_object then null; end $$;
+-- stored = approved but not scheduled yet; an admin picks its day later.
+alter table public.rounds drop constraint if exists rounds_status_valid;
+alter table public.rounds add constraint rounds_status_valid check (status in ('pending', 'stored', 'published', 'rejected'));
 do $$ begin
   alter table public.rounds add constraint rounds_published_have_date check (status <> 'published' or release_date is not null);
 exception when duplicate_object then null; end $$;
@@ -674,16 +674,29 @@ begin
     select jsonb_agg(public.round_json(r) || jsonb_build_object(
              'submittedBy', coalesce(p.display_name, '(no name)'), 'submitterEmail', u.email) order by r.created_at)
     from rounds r left join profiles p on p.user_id = r.created_by left join auth.users u on u.id = r.created_by
-    where r.status = 'pending'), '[]'::jsonb);
+    where r.status in ('pending', 'stored')), '[]'::jsonb);
 end $$;
 
--- Publishes a submission on the given day, or the next day without a round.
+-- Publishes a submission (waiting or in storage) on the given day, or the next day without a round.
 create or replace function public.admin_approve_round(p_id uuid, p_date date default null) returns jsonb
 language plpgsql volatile security definer set search_path = public as $$
 declare r rounds;
 begin
   perform public.assert_admin();
+  if p_date < public.today_local() then raise exception 'Pick today or a later day' using errcode = '22023'; end if;
   update rounds set status = 'published', release_date = coalesce(p_date, public.next_free_date()), review_note = null
+  where id = p_id and status in ('pending', 'stored') returning * into r;
+  if not found then raise exception 'That submission is no longer waiting for review' using errcode = 'P0002'; end if;
+  return public.round_json(r);
+end $$;
+
+-- Approves a submission without scheduling it: it waits in storage until an admin picks a day.
+create or replace function public.admin_store_round(p_id uuid) returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare r rounds;
+begin
+  perform public.assert_admin();
+  update rounds set status = 'stored', review_note = null
   where id = p_id and status = 'pending' returning * into r;
   if not found then raise exception 'That submission is no longer waiting for review' using errcode = 'P0002'; end if;
   return public.round_json(r);
@@ -696,7 +709,7 @@ declare path text;
 begin
   perform public.assert_admin();
   update rounds set status = 'rejected', review_note = left(trim(coalesce(p_note, '')), 300)
-  where id = p_id and status = 'pending' returning photo_path into path;
+  where id = p_id and status in ('pending', 'stored') returning photo_path into path;
   if path is null then raise exception 'That submission is no longer waiting for review' using errcode = 'P0002'; end if;
   return path;
 end $$;
@@ -740,6 +753,6 @@ grant execute on function
   public.admin_delete_round(uuid), public.admin_round_answer(uuid), public.admin_players(),
   public.admin_set_hidden(uuid, boolean), public.admin_list_admins(),
   public.request_contributor(text), public.submit_round(jsonb), public.my_submissions(),
-  public.admin_review_queue(), public.admin_approve_round(uuid, date), public.admin_reject_round(uuid, text),
+  public.admin_review_queue(), public.admin_approve_round(uuid, date), public.admin_store_round(uuid), public.admin_reject_round(uuid, text),
   public.admin_contributors(), public.admin_set_contributor(uuid, text)
   to authenticated;

@@ -7,6 +7,7 @@ import { footer } from './home.js';
 
 const STATUS = {
   pending: ['Waiting for review', ''],
+  stored: ['Approved', 'ok'],
   published: ['Approved', 'ok'],
   rejected: ['Not accepted', 'no'],
 };
@@ -41,6 +42,7 @@ export async function contribute(root) {
         return h('li', { class: 'round' }, ...roundSummary(r, { extra: h('span', { class: 'small' },
           h('span', { class: `status ${cls}` }, label),
           r.status === 'published' && r.date ? ` · ${r.date === boot.today ? 'live today' : `${r.date < boot.today ? 'went live' : 'goes live'} ${formatDate(r.date, boot.today)}`}` : '',
+          r.status === 'stored' ? ' · saved for a future day' : '',
           r.status === 'rejected' && r.reviewNote ? ` · “${r.reviewNote}”` : '') }));
       }))
       : h('p', { class: 'muted empty' }, 'Nothing submitted yet.'),
