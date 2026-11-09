@@ -230,3 +230,58 @@ test('SQL scoring matches the JavaScript scoring', async () => {
     for (const k of ['position', 'direction', 'total', 'max']) assert.ok(Math.abs(js[k] - sql[k]) <= 1, `${k}: ${js[k]} vs ${sql[k]}`);
   }
 });
+
+test('contributors: request, approval, submissions, review queue and scheduling', async () => {
+  const eve = person('eve', 'eve@example.com');
+  await db.ensureUser(eve.id, 'eve@example.com');
+  const photo = { mapId: 'campus', photoPath: `${randomUUID()}.jpg`, difficulty: 'hard', title: 'Eve 1', truth };
+
+  await rejects(db.rpc('request_contributor', { p_note: 'hi' }, as('eve')), /needs_name/);
+  await db.rpc('set_display_name', { p_name: 'Eve Photos' }, as('eve'));
+  await rejects(db.rpc('submit_round', { p: photo }, as('eve')), /approved contributors/);
+  assert.equal(await db.rpc('request_contributor', { p_note: 'I take lots of campus photos' }, as('eve')), 'pending');
+  assert.equal((await db.rpc('get_bootstrap', {}, as('eve'))).contributor, 'pending');
+  assert.equal(await db.rpc('can_upload', {}, as('eve')), false);
+  await rejects(db.rpc('admin_set_contributor', { p_user: eve.id, p_status: 'approved' }, as('ben')), /42501/);
+
+  const requests = await db.rpc('admin_contributors', {}, as('admin'));
+  assert.equal(requests.find(r => r.userId === eve.id).note, 'I take lots of campus photos');
+  await db.rpc('admin_set_contributor', { p_user: eve.id, p_status: 'approved' }, as('admin'));
+  assert.equal(await db.rpc('can_upload', {}, as('eve')), true);
+
+  const s1 = await db.rpc('submit_round', { p: photo }, as('eve'));
+  const s2 = await db.rpc('submit_round', { p: { ...photo, title: 'Eve 2', photoPath: `${randomUUID()}.jpg` } }, as('eve'));
+  const s3 = await db.rpc('submit_round', { p: { ...photo, title: 'Eve 3', photoPath: `${randomUUID()}.jpg` } }, as('eve'));
+  assert.equal(s1.status, 'pending');
+  assert.equal(s1.date, null);
+
+  // pending photos are invisible to players, visible to their submitter and admins
+  await rejects(db.rpc('get_round', { p_id: s1.id }, as('ana')), /P0002/);
+  await rejects(db.rpc('get_round', { p_id: s1.id }), /P0002/);
+  assert.equal((await db.rpc('get_round', { p_id: s1.id }, as('eve'))).round.status, 'pending');
+  assert.ok(!(await db.rpc('list_rounds', { p_include_scheduled: true }, as('admin'))).some(r => r.id === s1.id), 'not in the schedule until approved');
+  assert.deepEqual((await db.rpc('admin_review_queue', {}, as('admin'))).map(r => r.title), ['Eve 1', 'Eve 2', 'Eve 3']);
+  assert.equal((await db.rpc('admin_review_queue', {}, as('admin')))[0].submittedBy, 'Eve Photos');
+  await rejects(db.rpc('admin_review_queue', {}, as('eve')), /42501/);
+  await rejects(db.rpc('admin_approve_round', { p_id: s1.id }, as('eve')), /42501/);
+
+  // approvals fill the next open days, one per day
+  const busy = new Set((await db.rpc('list_rounds', { p_include_scheduled: true }, as('admin'))).map(r => r.date));
+  const a1 = await db.rpc('admin_approve_round', { p_id: s1.id }, as('admin'));
+  const a2 = await db.rpc('admin_approve_round', { p_id: s2.id }, as('admin'));
+  assert.equal(a1.status, 'published');
+  assert.ok(a1.date >= today && !busy.has(a1.date), `scheduled on a free day, got ${a1.date}`);
+  assert.ok(a2.date > a1.date, 'second approval goes on a later day');
+  await rejects(db.rpc('admin_approve_round', { p_id: s1.id }, as('admin')), /no longer waiting/);
+
+  const path = await db.rpc('admin_reject_round', { p_id: s3.id, p_note: 'Too blurry' }, as('admin'));
+  assert.match(path, /\.jpg$/);
+  const mine = await db.rpc('my_submissions', {}, as('eve'));
+  assert.deepEqual(mine.map(r => [r.title, r.status]), [['Eve 3', 'rejected'], ['Eve 2', 'published'], ['Eve 1', 'published']]);
+  assert.equal(mine[0].reviewNote, 'Too blurry');
+  assert.deepEqual(await db.rpc('admin_review_queue', {}, as('admin')), []);
+
+  // denied contributors can't submit
+  await db.rpc('admin_set_contributor', { p_user: eve.id, p_status: 'denied' }, as('admin'));
+  await rejects(db.rpc('submit_round', { p: photo }, as('eve')), /approved contributors/);
+});

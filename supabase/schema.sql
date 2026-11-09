@@ -3,10 +3,12 @@
 --
 -- Security model: every table has row-level security ON and NO policies, so the public API can't
 -- read or change any table directly. Everything goes through the functions below. Each one checks
--- who is calling (auth.uid() = signed-in player, is_admin() = one of the admin emails) before acting.
+-- who is calling before acting: guests, signed-in players (auth.uid()), approved contributors
+-- (is_contributor), and admins (is_admin(): Google accounts on the admins list).
 -- The answers to rounds are only ever returned to someone who has already guessed.
 --
--- Safe to run again: tables use IF NOT EXISTS and functions use CREATE OR REPLACE.
+-- Safe to run again, and upgrades older versions in place: tables use IF NOT EXISTS, new columns
+-- use ADD COLUMN IF NOT EXISTS, and functions use CREATE OR REPLACE.
 -- ═════════════════════════════════════════════════════════════════════════════════════════════════
 
 -- ── tables ──────────────────────────────────────────────────────────────────────────────────────
@@ -33,11 +35,31 @@ create table if not exists public.rounds (
   title        text not null default '' check (length(title) <= 80),
   photo_path   text not null,              -- file name in the "photos" storage bucket
   difficulty   text not null,
-  release_date date not null,              -- the day it is "today's round" (campus time zone)
+  release_date date,                       -- the day it is "today's round" (campus time zone)
   created_by   uuid,
   created_at   timestamptz not null default now()
 );
+-- Added for contributor submissions (no-ops once present).
+alter table public.rounds add column if not exists status text not null default 'published';
+alter table public.rounds add column if not exists review_note text;
+alter table public.rounds alter column release_date drop not null;
+do $$ begin
+  alter table public.rounds add constraint rounds_status_valid check (status in ('pending', 'published', 'rejected'));
+exception when duplicate_object then null; end $$;
+do $$ begin
+  alter table public.rounds add constraint rounds_published_have_date check (status <> 'published' or release_date is not null);
+exception when duplicate_object then null; end $$;
 create index if not exists rounds_release_date on public.rounds (release_date desc);
+
+-- Players who asked to submit photos. An admin approves or denies each request; approved
+-- contributors' photos still go through review before they're scheduled.
+create table if not exists public.contributors (
+  user_id    uuid primary key references auth.users(id) on delete cascade,
+  status     text not null default 'pending' check (status in ('pending', 'approved', 'denied')),
+  note       text not null default '' check (length(note) <= 300),
+  created_at timestamptz not null default now(),
+  decided_at timestamptz
+);
 
 -- The secret part of a round, kept apart so it can never leak through a round listing.
 create table if not exists public.round_answers (
@@ -79,6 +101,7 @@ create unique index if not exists guesses_one_ranked on public.guesses (round_id
 alter table public.settings      enable row level security;
 alter table public.admins        enable row level security;
 alter table public.maps          enable row level security;
+alter table public.contributors  enable row level security;
 alter table public.rounds        enable row level security;
 alter table public.round_answers enable row level security;
 alter table public.profiles      enable row level security;
@@ -114,6 +137,25 @@ begin
     raise exception 'Only admins can do that' using errcode = '42501';
   end if;
 end $$;
+
+-- Contributor = signed-in player whose request to submit photos an admin approved.
+create or replace function public.is_contributor() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from contributors where user_id = auth.uid() and status = 'approved')
+$$;
+
+-- May upload round photos: admins and approved contributors (used by the storage rules).
+create or replace function public.can_upload() returns boolean
+language sql stable security definer set search_path = public as $$
+  select public.is_admin() or public.is_contributor()
+$$;
+
+-- The first day from today on that has no published round: where an approved submission goes.
+create or replace function public.next_free_date() returns date
+language sql stable security definer set search_path = public as $$
+  select min(d)::date from generate_series(public.today_local(), public.today_local() + 3650, interval '1 day') d
+  where not exists (select 1 from rounds where status = 'published' and release_date = d::date)
+$$;
 
 create or replace function public.assert_signed_in() returns uuid
 language plpgsql stable security definer set search_path = public as $$
@@ -194,7 +236,7 @@ end $$;
 create or replace function public.round_json(r public.rounds) returns jsonb
 language sql stable security definer set search_path = public as $$
   select jsonb_build_object(
-    'id', r.id, 'mapId', r.map_id, 'title', r.title, 'difficulty', r.difficulty,
+    'id', r.id, 'mapId', r.map_id, 'title', r.title, 'difficulty', r.difficulty, 'status', r.status,
     'date', to_char(r.release_date, 'YYYY-MM-DD'), 'photoPath', r.photo_path, 'createdAt', r.created_at,
     'plays', (select count(*) from guesses g where g.round_id = r.id and g.ranked),
     'mine', (select jsonb_build_object('played', true, 'best', max(g.total))
@@ -214,13 +256,17 @@ language sql stable security definer set search_path = public as $$
   select data || jsonb_build_object('id', id) from maps where id = p_id
 $$;
 
--- A round is visible once its release date has arrived; admins also see scheduled ones.
+-- A round is visible once it's published and its day has arrived. Admins see every round, and
+-- contributors see the ones they submitted.
 create or replace function public.visible_round(p_id uuid) returns public.rounds
 language plpgsql stable security definer set search_path = public as $$
 declare r rounds;
 begin
   select * into r from rounds where id = p_id;
-  if not found or (r.release_date > public.today_local() and not public.is_admin()) then
+  if not found or not (
+       (r.status = 'published' and r.release_date <= public.today_local())
+       or public.is_admin()
+       or (auth.uid() is not null and r.created_by = auth.uid())) then
     raise exception 'Round not found' using errcode = 'P0002';
   end if;
   return r;
@@ -253,7 +299,8 @@ language sql stable security definer set search_path = public as $$
     'scoring', (select value from settings where key = 'scoring'),
     'signedIn', auth.uid() is not null,
     'isAdmin', public.is_admin(),
-    'profile', (select jsonb_build_object('displayName', display_name, 'hidden', hidden) from profiles where user_id = auth.uid()))
+    'profile', (select jsonb_build_object('displayName', display_name, 'hidden', hidden) from profiles where user_id = auth.uid()),
+    'contributor', (select status from contributors where user_id = auth.uid()))
 $$;
 
 create or replace function public.get_maps() returns jsonb
@@ -264,7 +311,7 @@ $$;
 create or replace function public.get_today() returns jsonb
 language sql stable security definer set search_path = public as $$
   select public.round_json(r) from rounds r
-  where r.release_date = public.today_local()
+  where r.status = 'published' and r.release_date = public.today_local()
   order by r.created_at desc limit 1
 $$;
 
@@ -273,7 +320,7 @@ create or replace function public.list_rounds(p_include_scheduled boolean defaul
 language sql stable security definer set search_path = public as $$
   select coalesce(jsonb_agg(public.round_json(r) order by r.release_date desc, r.created_at desc), '[]'::jsonb)
   from rounds r
-  where r.release_date <= public.today_local() or (p_include_scheduled and public.is_admin())
+  where r.status = 'published' and (r.release_date <= public.today_local() or (p_include_scheduled and public.is_admin()))
 $$;
 
 create or replace function public.get_round(p_id uuid) returns jsonb
@@ -281,7 +328,7 @@ language plpgsql stable security definer set search_path = public as $$
 declare r rounds := public.visible_round(p_id);
 begin
   return jsonb_build_object('round', public.round_json(r), 'map', public.map_json(r.map_id),
-                            'isToday', r.release_date = public.today_local());
+                            'isToday', r.status = 'published' and r.release_date = public.today_local());
 end $$;
 
 -- Score a guess. Today's round, signed in: one attempt, goes on the leaderboard (except for the admin
@@ -293,7 +340,7 @@ declare
   m jsonb := public.map_json(r.map_id);
   a round_answers;
   uid uuid := auth.uid();
-  is_today boolean := r.release_date = public.today_local();
+  is_today boolean := r.status = 'published' and r.release_date = public.today_local();
   pos jsonb; heading float8; s jsonb; g guesses; is_ranked boolean := false;
 begin
   if not public.valid_pos(m, p_pos) then
@@ -361,7 +408,7 @@ declare
   r rounds;
 begin
   if rid is null then
-    select id into rid from rounds where release_date = public.today_local() order by created_at desc limit 1;
+    select id into rid from rounds where status = 'published' and release_date = public.today_local() order by created_at desc limit 1;
     if rid is null then return jsonb_build_object('round', null, 'rows', '[]'::jsonb); end if;
   end if;
   r := public.visible_round(rid);
@@ -477,27 +524,40 @@ begin
   return public.map_json(map_id);
 end $$;
 
-create or replace function public.admin_create_round(p jsonb) returns jsonb
-language plpgsql volatile security definer set search_path = public as $$
-declare
-  m jsonb;
-  r rounds;
+-- Checks a new round (photo, spot, direction, difficulty) and returns its map, or raises.
+create or replace function public.check_round_input(p jsonb) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare m jsonb := public.map_json(coalesce(p->>'mapId', 'campus'));
 begin
-  perform public.assert_admin();
-  m := public.map_json(p->>'mapId');
   if m is null then raise exception 'Pick a map' using errcode = '22023'; end if;
   if not public.valid_pos(m, p#>'{truth,pos}') then raise exception 'Set where the photo was taken' using errcode = '22023'; end if;
   if jsonb_typeof(p#>'{truth,heading}') is distinct from 'number' then raise exception 'Set the camera direction' using errcode = '22023'; end if;
   if not coalesce((public.setting('scoring')->'difficulties') ? (p->>'difficulty'), false) then raise exception 'Pick a difficulty' using errcode = '22023'; end if;
   if coalesce(p->>'photoPath', '') !~ '^[A-Za-z0-9][A-Za-z0-9/_.-]{0,199}$' then raise exception 'Add a photo' using errcode = '22023'; end if;
-  if coalesce(p->>'date', '') !~ '^\d{4}-\d{2}-\d{2}$' then raise exception 'Pick a release date' using errcode = '22023'; end if;
+  return m;
+end $$;
 
-  insert into rounds (map_id, title, photo_path, difficulty, release_date, created_by)
-  values (p->>'mapId', left(trim(coalesce(p->>'title', '')), 80), p->>'photoPath', p->>'difficulty', (p->>'date')::date, auth.uid())
+-- Stores a round and its answer.
+create or replace function public.insert_round(p jsonb, m jsonb, p_status text, p_date date) returns public.rounds
+language plpgsql volatile security definer set search_path = public as $$
+declare r rounds;
+begin
+  insert into rounds (map_id, title, photo_path, difficulty, release_date, created_by, status)
+  values (m->>'id', left(trim(coalesce(p->>'title', '')), 80), p->>'photoPath', p->>'difficulty', p_date, auth.uid(), p_status)
   returning * into r;
   insert into round_answers (round_id, pos, heading)
   values (r.id, public.clamp_pos(m, p#>'{truth,pos}'), public.norm360((p#>>'{truth,heading}')::float8));
-  return public.round_json(r);
+  return r;
+end $$;
+
+create or replace function public.admin_create_round(p jsonb) returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare m jsonb;
+begin
+  perform public.assert_admin();
+  m := public.check_round_input(p);
+  if coalesce(p->>'date', '') !~ '^\d{4}-\d{2}-\d{2}$' then raise exception 'Pick a release date' using errcode = '22023'; end if;
+  return public.round_json(public.insert_round(p, m, 'published', (p->>'date')::date));
 end $$;
 
 -- Change title, difficulty or release date.
@@ -566,13 +626,110 @@ begin
   return (select coalesce(jsonb_agg(email order by email), '[]'::jsonb) from admins);
 end $$;
 
+-- ── contributors ────────────────────────────────────────────────────────────────────────────────
+
+-- Ask to submit photos. A denied player can ask again; an approved one stays approved.
+create or replace function public.request_contributor(p_note text) returns text
+language plpgsql volatile security definer set search_path = public as $$
+declare uid uuid := public.assert_signed_in();
+begin
+  if not exists (select 1 from profiles where user_id = uid) then
+    raise exception 'Choose a leaderboard name first' using errcode = 'P0001', hint = 'needs_name';
+  end if;
+  insert into contributors (user_id, note) values (uid, left(trim(coalesce(p_note, '')), 300))
+  on conflict (user_id) do update
+    set status = case when contributors.status = 'approved' then 'approved' else 'pending' end,
+        note = excluded.note, created_at = case when contributors.status = 'approved' then contributors.created_at else now() end;
+  return (select status from contributors where user_id = uid);
+end $$;
+
+-- A contributor's photo + answer. It waits in the review queue until an admin approves it.
+create or replace function public.submit_round(p jsonb) returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare m jsonb;
+begin
+  perform public.assert_signed_in();
+  if not public.can_upload() then raise exception 'Only approved contributors can submit photos' using errcode = '42501'; end if;
+  if (select count(*) from rounds where created_by = auth.uid() and status = 'pending') >= 10 then
+    raise exception 'You have 10 photos waiting for review; please wait for those first' using errcode = 'P0001';
+  end if;
+  m := public.check_round_input(p);
+  return public.round_json(public.insert_round(p, m, 'pending', null));
+end $$;
+
+-- Everything you've submitted, newest first, with its review status.
+create or replace function public.my_submissions() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_agg(public.round_json(r) || jsonb_build_object('reviewNote', r.review_note) order by r.created_at desc), '[]'::jsonb)
+  from rounds r where r.created_by = auth.uid() and auth.uid() is not null
+$$;
+
+-- ── review (admins) ─────────────────────────────────────────────────────────────────────────────
+
+create or replace function public.admin_review_queue() returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+begin
+  perform public.assert_admin();
+  return coalesce((
+    select jsonb_agg(public.round_json(r) || jsonb_build_object(
+             'submittedBy', coalesce(p.display_name, '(no name)'), 'submitterEmail', u.email) order by r.created_at)
+    from rounds r left join profiles p on p.user_id = r.created_by left join auth.users u on u.id = r.created_by
+    where r.status = 'pending'), '[]'::jsonb);
+end $$;
+
+-- Publishes a submission on the given day, or the next day without a round.
+create or replace function public.admin_approve_round(p_id uuid, p_date date default null) returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare r rounds;
+begin
+  perform public.assert_admin();
+  update rounds set status = 'published', release_date = coalesce(p_date, public.next_free_date()), review_note = null
+  where id = p_id and status = 'pending' returning * into r;
+  if not found then raise exception 'That submission is no longer waiting for review' using errcode = 'P0002'; end if;
+  return public.round_json(r);
+end $$;
+
+-- Rejects a submission (the contributor sees the note). Returns the photo path so the app can delete it.
+create or replace function public.admin_reject_round(p_id uuid, p_note text) returns text
+language plpgsql volatile security definer set search_path = public as $$
+declare path text;
+begin
+  perform public.assert_admin();
+  update rounds set status = 'rejected', review_note = left(trim(coalesce(p_note, '')), 300)
+  where id = p_id and status = 'pending' returning photo_path into path;
+  if path is null then raise exception 'That submission is no longer waiting for review' using errcode = 'P0002'; end if;
+  return path;
+end $$;
+
+create or replace function public.admin_contributors() returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+begin
+  perform public.assert_admin();
+  return coalesce((
+    select jsonb_agg(jsonb_build_object('userId', c.user_id, 'name', coalesce(p.display_name, '(no name)'), 'email', u.email,
+                                        'status', c.status, 'note', c.note, 'requestedAt', c.created_at,
+                                        'submitted', (select count(*) from rounds r where r.created_by = c.user_id),
+                                        'published', (select count(*) from rounds r where r.created_by = c.user_id and r.status = 'published'))
+                     order by c.status = 'pending' desc, c.created_at desc)
+    from contributors c left join profiles p on p.user_id = c.user_id left join auth.users u on u.id = c.user_id), '[]'::jsonb);
+end $$;
+
+create or replace function public.admin_set_contributor(p_user uuid, p_status text) returns void
+language plpgsql volatile security definer set search_path = public as $$
+begin
+  perform public.assert_admin();
+  if p_status not in ('approved', 'denied') then raise exception 'Bad status' using errcode = '22023'; end if;
+  update contributors set status = p_status, decided_at = now() where user_id = p_user;
+  if not found then raise exception 'No request from that player' using errcode = 'P0002'; end if;
+end $$;
+
 -- ── who may call what ───────────────────────────────────────────────────────────────────────────
 
 revoke all on all tables in schema public from anon, authenticated;
 revoke execute on all functions in schema public from public, anon, authenticated;
 
 grant execute on function
-  public.is_admin(), public.get_bootstrap(), public.get_maps(), public.get_today(), public.list_rounds(boolean),
+  public.is_admin(), public.can_upload(), public.get_bootstrap(), public.get_maps(), public.get_today(), public.list_rounds(boolean),
   public.get_round(uuid), public.submit_guess(uuid, jsonb, double precision), public.get_my_result(uuid),
   public.leaderboard_round(uuid), public.leaderboard_overall(integer)
   to anon, authenticated;
@@ -581,5 +738,8 @@ grant execute on function
   public.set_display_name(text), public.delete_my_account(),
   public.admin_save_map(jsonb), public.admin_create_round(jsonb), public.admin_update_round(uuid, jsonb),
   public.admin_delete_round(uuid), public.admin_round_answer(uuid), public.admin_players(),
-  public.admin_set_hidden(uuid, boolean), public.admin_list_admins()
+  public.admin_set_hidden(uuid, boolean), public.admin_list_admins(),
+  public.request_contributor(text), public.submit_round(jsonb), public.my_submissions(),
+  public.admin_review_queue(), public.admin_approve_round(uuid, date), public.admin_reject_round(uuid, text),
+  public.admin_contributors(), public.admin_set_contributor(uuid, text)
   to authenticated;

@@ -1,5 +1,5 @@
--- Photo storage (Supabase Storage). Anyone can view a photo by its link; only admins can upload,
--- change, list or delete. File names are random, so photos of scheduled rounds can't be guessed.
+-- Photo storage (Supabase Storage). Anyone can view a photo by its link; admins and approved
+-- contributors can upload; only admins can change or delete. File names are random, so photos of scheduled rounds can't be guessed.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('photos', 'photos', true, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
 on conflict (id) do update
@@ -7,11 +7,11 @@ on conflict (id) do update
 
 drop policy if exists "polyspot: admins upload photos" on storage.objects;
 create policy "polyspot: admins upload photos" on storage.objects
-  for insert to authenticated with check (bucket_id = 'photos' and public.is_admin());
+  for insert to authenticated with check (bucket_id = 'photos' and public.can_upload());
 
 drop policy if exists "polyspot: admins see photo list" on storage.objects;
 create policy "polyspot: admins see photo list" on storage.objects
-  for select to authenticated using (bucket_id = 'photos' and public.is_admin());
+  for select to authenticated using (bucket_id = 'photos' and public.can_upload());
 
 drop policy if exists "polyspot: admins change photos" on storage.objects;
 create policy "polyspot: admins change photos" on storage.objects

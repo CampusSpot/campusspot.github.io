@@ -36,6 +36,10 @@ export async function account(root) {
           onclick: () => ensureName({ force: true, reason: 'Pick a new leaderboard name. Your scores stay with you.' }) }),
         btn('Sign out', { icon: 'logout', onclick: () => signOut() }))),
     h('section', { class: 'card' },
+      h('h2', {}, 'Contribute photos'),
+      h('p', { class: 'small muted' }, boot.contributor === 'approved' || boot.isAdmin ? 'Submit campus photos for future rounds.' : 'Want to submit your own campus photos? Ask to become a contributor.'),
+      btn('Contribute', { icon: 'camera', href: '#/contribute' })),
+    h('section', { class: 'card' },
       h('h2', {}, 'Your data'),
       h('p', { class: 'small muted' }, 'We store your Google account’s email and ID, the name you chose, and your guesses. Deleting your account removes all of it right away.'),
       btn('Delete my account', { icon: 'trash', class: 'danger', onclick: async () => {

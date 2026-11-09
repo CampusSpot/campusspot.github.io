@@ -369,3 +369,11 @@ input:focus, select:focus { border-color: var(--guess); outline: none; box-shado
   .map-controls { max-width: 720px; width: 100%; margin: 0 auto; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* Contributor status + review queue */
+.status { display: inline-block; padding: 1px 7px; border-radius: 4px; font: 700 0.78rem/1.5 var(--display); text-transform: uppercase; letter-spacing: 0.06em; background: var(--surface-2); color: var(--muted); margin-right: 4px; }
+.status.ok { background: color-mix(in srgb, var(--truth) 18%, transparent); color: var(--text); }
+.status.no { background: color-mix(in srgb, var(--danger) 15%, transparent); color: var(--danger); }
+.review-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.review-item { display: grid; gap: 10px; }
+.review-item .preview { max-height: 320px; object-fit: cover; }

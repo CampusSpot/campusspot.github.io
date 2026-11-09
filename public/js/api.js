@@ -16,6 +16,9 @@ export const api = {
   leaderboardOverall: (days = null) => rpc('leaderboard_overall', { p_days: days }),
   setName: name => rpc('set_display_name', { p_name: name }),
   deleteAccount: () => rpc('delete_my_account'),
+  requestContributor: note => rpc('request_contributor', { p_note: note }),
+  submitRound: round => rpc('submit_round', { p: round }),
+  mySubmissions: () => rpc('my_submissions'),
 
   admin: {
     saveMap: async map => { const saved = await rpc('admin_save_map', { p_map: map }); mapsCache = null; return saved; },
@@ -26,5 +29,10 @@ export const api = {
     players: () => rpc('admin_players'),
     setHidden: (userId, hidden) => rpc('admin_set_hidden', { p_user: userId, p_hidden: hidden }),
     admins: () => rpc('admin_list_admins'),
+    reviewQueue: () => rpc('admin_review_queue'),
+    approve: (id, date = null) => rpc('admin_approve_round', { p_id: id, p_date: date }),
+    reject: (id, note) => rpc('admin_reject_round', { p_id: id, p_note: note }),
+    contributors: () => rpc('admin_contributors'),
+    setContributor: (userId, status) => rpc('admin_set_contributor', { p_user: userId, p_status: status }),
   },
 };

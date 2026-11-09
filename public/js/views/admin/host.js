@@ -1,4 +1,6 @@
-// Admin: make a new round. Photo → where it was taken + camera direction → difficulty → release date.
+// Making a round: photo → where it was taken + camera direction → difficulty (→ release date).
+// Admins publish directly on a chosen day. Contributors submit for review; an admin approves it
+// and it's scheduled on the next open day.
 import { api } from '../../api.js';
 import { deletePhoto, photoUrl, uploadPhoto } from '../../backend.js';
 import { card, difficultyPicker, headingControl, maxPointsText, pageHeader } from '../../components.js';
@@ -9,8 +11,12 @@ import { scoring, session } from '../../session.js';
 import { btn, formatDate, h, toast } from '../../ui.js';
 import { adminNav, nextFreeDate } from './common.js';
 
-export async function adminHost(root) {
-  const [maps, rounds] = await Promise.all([api.maps(), api.rounds(true)]);
+export const adminHost = root => roundForm(root, { admin: true });
+export const contributeNew = root => roundForm(root, { admin: false });
+
+async function roundForm(root, { admin }) {
+  const [maps, rounds] = await Promise.all([api.maps(), admin ? api.rounds(true) : []]);
+  const nav = () => (admin ? adminNav() : null);
   const today = session.boot.today;
   const state = {
     photo: null, map: maps.find(m => m.type === 'latlng') || maps[0], pos: null, heading: 0,
@@ -75,7 +81,7 @@ export async function adminHost(root) {
   saveBtn.addEventListener('click', async () => {
     if (!state.photo) return toast('Add a photo first', 'error');
     if (!state.pos) return toast('Tap the map where the photo was taken', 'error');
-    if (!state.date) return toast('Pick a release date', 'error');
+    if (admin && !state.date) return toast('Pick a release date', 'error');
     saveBtn.disabled = true;
     saveBtn.lastChild.textContent = 'Uploading photo…';
     const photoPath = `${crypto.randomUUID()}.jpg`; // random name: scheduled photos can't be guessed
@@ -85,33 +91,39 @@ export async function adminHost(root) {
       await uploadPhoto(photoPath, bytes, 'image/jpeg');
       uploaded = true;
       saveBtn.lastChild.textContent = 'Saving…';
-      const round = await api.admin.createRound({
+      const input = {
         mapId: state.map.id, photoPath, truth: { pos: state.pos, heading: state.heading },
-        difficulty: state.difficulty, date: state.date, title: state.title,
-      });
+        difficulty: state.difficulty, title: state.title,
+      };
+      const round = admin ? await api.admin.createRound({ ...input, date: state.date }) : await api.submitRound(input);
       done(round);
     } catch (err) {
       if (uploaded) deletePhoto(photoPath).catch(() => {});
       toast(err.message, 'error');
       saveBtn.disabled = false;
-      saveBtn.lastChild.textContent = 'Save round';
+      saveBtn.lastChild.textContent = admin ? 'Save round' : 'Submit for review';
     }
   });
 
   function done(round) {
     view.destroy();
     view = null;
-    root.replaceChildren(adminNav(), pageHeader('Round saved'), card(
+    const again = admin ? '#/admin/new' : '#/contribute/new';
+    const back = admin ? '#/admin' : '#/contribute';
+    root.replaceChildren(...[nav(), pageHeader(admin ? 'Round saved' : 'Submitted for review'), card(
       h('img', { class: 'preview', src: photoUrl(round.photoPath), alt: '' }),
-      h('p', {}, round.date === today ? 'It’s live now as today’s round.' : `It goes live on ${formatDate(round.date, today)} (campus time).`),
+      h('p', {}, !admin ? 'Thanks! An admin will review it. Once approved, it’s scheduled for the next open day.'
+        : round.date === today ? 'It’s live now as today’s round.' : `It goes live on ${formatDate(round.date, today)} (campus time).`),
       h('div', { class: 'row wrap' },
-        btn('All rounds', { href: '#/admin', icon: 'calendar', class: 'primary' }),
-        btn('Make another', { icon: 'plus', onclick: () => { location.hash = '#/admin'; setTimeout(() => (location.hash = '#/admin/new'), 0); } }))));
+        btn(admin ? 'All rounds' : 'Your submissions', { href: back, class: 'primary' }),
+        btn(admin ? 'Make another' : 'Submit another', { onclick: () => { location.hash = back; setTimeout(() => (location.hash = again), 0); } })))].filter(Boolean));
   }
 
+  if (!admin) saveBtn.lastChild.textContent = 'Submit for review';
   root.append(
-    adminNav(),
-    pageHeader('New round', { sub: 'Only admins can see this page.' }),
+    nav(),
+    admin ? pageHeader('New round', { sub: 'Only admins can see this page.' })
+      : pageHeader('Submit a photo', { back: '#/contribute', sub: 'Photos are reviewed by an admin before they’re scheduled.' }),
     card(
       h('h2', {}, '1. Photo'),
       h('div', { class: 'row wrap' },
@@ -123,11 +135,12 @@ export async function adminHost(root) {
     box,
     card(h('h2', {}, 'Camera direction'), heading.el),
     card(h('h2', {}, '3. Difficulty'), difficulty.el, maxText),
-    card(
+    admin ? card(
       h('h2', {}, '4. Release'),
       h('label', { class: 'field' }, h('span', {}, 'Goes live on (midnight, campus time)'), date),
       taken,
-      h('label', { class: 'field' }, h('span', {}, 'Title'), title)),
+      h('label', { class: 'field' }, h('span', {}, 'Title'), title))
+      : card(h('h2', {}, '4. Title'), h('label', { class: 'field' }, h('span', {}, 'Optional'), title)),
     h('div', { class: 'sticky-actions' }, saveBtn),
   );
   useMap(state.map);

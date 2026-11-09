@@ -4,7 +4,7 @@
 //
 //   POST   /rest/v1/rpc/<function>                 database functions
 //   GET    /auth/v1/user, POST /auth/v1/token, POST /auth/v1/logout, POST /auth/v1/dev-login
-//   POST   /storage/v1/object/photos/<path>        upload (admins only)
+//   POST   /storage/v1/object/photos/<path>        upload (admins and approved contributors)
 //   DELETE /storage/v1/object/photos               delete (admins only)
 //   GET    /storage/v1/object/public/photos/<path> view
 import crypto from 'node:crypto';
@@ -135,8 +135,10 @@ export function createEmulator({ db, dataDir }) {
     const up = p.match(/^\/storage\/v1\/object\/photos\/([A-Za-z0-9][A-Za-z0-9/_.-]*)$/);
     if ((up && req.method === 'POST') || (p === '/storage/v1/object/photos' && req.method === 'DELETE')) {
       const claims = claimsOf(req);
-      const admin = claims && (await db.rpc('get_bootstrap', {}, claims)).isAdmin;
-      if (!admin) { json(res, 403, { statusCode: '403', error: 'Unauthorized', message: 'new row violates row-level security policy' }); return true; }
+      const allowed = claims && (req.method === 'DELETE'
+        ? (await db.rpc('get_bootstrap', {}, claims)).isAdmin
+        : await db.rpc('can_upload', {}, claims));
+      if (!allowed) { json(res, 403, { statusCode: '403', error: 'Unauthorized', message: 'new row violates row-level security policy' }); return true; }
       if (up) {
         if (!/^image\/(jpeg|png|webp)$/.test(req.headers['content-type'] || '')) { json(res, 415, { message: 'Only JPEG, PNG or WebP' }); return true; }
         const file = path.join(photosDir, path.normalize(up[1]));

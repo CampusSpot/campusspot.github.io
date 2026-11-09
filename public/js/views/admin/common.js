@@ -6,7 +6,9 @@ const LINKS = [
   ['#/admin', 'Rounds', 'calendar'],
   ['#/admin/new', 'New round', 'camera'],
   ['#/admin/maps', 'Map', 'map'],
+  ['#/admin/review', 'Review', 'check'],
   ['#/admin/players', 'Players', 'users'],
+  ['#/admin/contributors', 'Contributors', 'camera'],
 ];
 
 export function adminNav() {

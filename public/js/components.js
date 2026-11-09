@@ -28,8 +28,8 @@ export function roundSummary(r, { extra } = {}) {
   return [
     h('img', { class: 'thumb', src: photoUrl(r.photoPath), alt: '', loading: 'lazy' }),
     h('div', { class: 'round-info' },
-      h('strong', {}, r.title || formatDate(r.date, session.boot.today)),
-      h('span', { class: 'small muted' }, r.title ? formatDate(r.date, session.boot.today) : null, r.title ? ' · ' : null, difficultyBadge(r.difficulty)),
+      h('strong', {}, r.title || (r.date ? formatDate(r.date, session.boot.today) : 'Untitled')),
+      h('span', { class: 'small muted' }, r.title && r.date ? formatDate(r.date, session.boot.today) : null, r.title && r.date ? ' · ' : null, difficultyBadge(r.difficulty)),
       extra || null),
   ];
 }

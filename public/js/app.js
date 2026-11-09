@@ -13,7 +13,10 @@ import { archive } from './views/archive.js';
 import { account } from './views/account.js';
 import { about, privacy, terms } from './views/legal.js';
 import { adminRounds } from './views/admin/rounds.js';
-import { adminHost } from './views/admin/host.js';
+import { adminHost, contributeNew } from './views/admin/host.js';
+import { adminReview } from './views/admin/review.js';
+import { adminContributors } from './views/admin/contributors.js';
+import { contribute } from './views/contribute.js';
 import { adminMaps } from './views/admin/maps.js';
 import { adminPlayers } from './views/admin/players.js';
 
@@ -28,11 +31,15 @@ const routes = [
   ['/about', about],
   ['/privacy', privacy],
   ['/terms', terms],
+  ['/contribute', contribute],
+  ['/contribute/new', contributeNew, { contributor: true }],
   ['/admin', adminRounds, { admin: true }],
   ['/admin/new', adminHost, { admin: true }],
   ['/admin/maps', adminMaps, { admin: true }],
   ['/admin/maps/:id', adminMaps, { admin: true }],
   ['/admin/players', adminPlayers, { admin: true }],
+  ['/admin/review', adminReview, { admin: true }],
+  ['/admin/contributors', adminContributors, { admin: true }],
 ].map(([pattern, view, opts = {}]) => ({
   re: new RegExp(`^${pattern.replace(/:\w+/g, '([\\w-]+)')}$`),
   view, ...opts,
@@ -92,6 +99,7 @@ async function render() {
       h('p', { class: 'muted' }, 'This page is for the people who run PolySpot.')));
     return;
   }
+  if (route.contributor && !session.boot.isAdmin && session.boot.contributor !== 'approved') return location.replace('#/contribute');
   const slow = setTimeout(() => container.isConnected && !container.childElementCount && container.append(loading()), 150);
   try {
     const done = await route.view(container, ...(route.re ? p.match(route.re).slice(1) : []));
