@@ -1,18 +1,39 @@
 // Who's playing: sign-in (Google on the live site, a simple email form in local mode), the player's
-// leaderboard name, admin status, and settings from the database (today's date, scoring).
+// leaderboard name, campus, admin status, and settings from the database (today's date, scoring).
 import defaultScoring from '../shared/scoring.config.js';
 import { mode, rpc, sb } from './backend.js';
 import { api } from './api.js';
 import { googleG } from './icons.js';
 import { btn, h, modal, toast } from './ui.js';
 
+const CAMPUS_KEY = 'campusspot.campus';
 export const session = {
   user: null,
-  boot: { today: null, timezone: 'America/Los_Angeles', scoring: defaultScoring, signedIn: false, isAdmin: false, profile: null },
+  boot: { today: null, timezone: 'America/Los_Angeles', scoring: defaultScoring, signedIn: false, isAdmin: false, profile: null, campus: null },
+  localCampus: readLocalCampus(),
 };
 const listeners = new Set();
 export const onSessionChange = fn => { listeners.add(fn); return () => listeners.delete(fn); };
 export const scoring = () => session.boot.scoring || defaultScoring;
+
+// The campus you're playing: your membership when signed in, otherwise the one picked on this device.
+function readLocalCampus() {
+  try { return JSON.parse(localStorage.getItem(CAMPUS_KEY)) || null; } catch { return null; }
+}
+function saveLocalCampus(c) {
+  session.localCampus = c;
+  try { localStorage.setItem(CAMPUS_KEY, JSON.stringify(c)); } catch {}
+}
+export const currentCampus = () => (session.user && session.boot.campus) || session.localCampus;
+
+/** Picks (guests) or joins (signed in) a campus. Signed-in players belong to one campus at a time. */
+export async function chooseCampus(c) {
+  saveLocalCampus(c);
+  if (session.user) {
+    await api.joinCampus(c.id);
+    await refreshSession();
+  } else listeners.forEach(fn => fn(session));
+}
 
 export async function refreshSession() {
   if (!sb) return;
@@ -20,6 +41,14 @@ export async function refreshSession() {
   session.user = data.session?.user ?? null;
   try {
     session.boot = { ...session.boot, ...(await rpc('get_bootstrap')) };
+    // First sign-in on this device: join the campus picked as a guest.
+    if (session.user && !session.boot.campus && session.localCampus) {
+      try {
+        await api.joinCampus(session.localCampus.id);
+        session.boot = { ...session.boot, ...(await rpc('get_bootstrap')) };
+      } catch (err) { console.error(err); }
+    }
+    if (session.boot.campus) saveLocalCampus(session.boot.campus);
   } catch (err) {
     if (session.user && /JWT|token/i.test(err.message)) { await sb.auth.signOut(); return refreshSession(); }
     throw err;
@@ -49,12 +78,12 @@ export async function initSession() {
   if (!sb) return;
   const params = new URLSearchParams(location.search);
   const urlError = signInErrorFromUrl();
-  const returnTo = sessionStorage.getItem('polyspot.return');
+  const returnTo = sessionStorage.getItem('campusspot.return');
   // Finishes a Google sign-in when we're coming back from it (?code=…).
   const { error: exchangeError } = await sb.auth.initialize();
   if (params.has('code') || urlError) {
     history.replaceState(null, '', location.pathname + (returnTo || '#/'));
-    sessionStorage.removeItem('polyspot.return');
+    sessionStorage.removeItem('campusspot.return');
   }
   const problem = urlError || (params.has('code') && exchangeError ? { code: exchangeError.code, message: exchangeError.message } : null);
   if (problem) setTimeout(() => showSignInProblem(problem), 300);
@@ -67,7 +96,7 @@ export async function initSession() {
 /** Starts sign-in. Live: goes to Google and comes back. Local mode: asks for an email. */
 export async function signIn() {
   if (mode === 'live') {
-    sessionStorage.setItem('polyspot.return', location.hash || '#/');
+    sessionStorage.setItem('campusspot.return', location.hash || '#/');
     const { error } = await sb.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: location.origin + location.pathname, queryParams: { prompt: 'select_account' } },
@@ -75,7 +104,7 @@ export async function signIn() {
     if (error) showSignInProblem({ code: error.code, message: error.message });
     return false; // the page navigates away
   }
-  const admins = window.POLYSPOT_LOCAL?.adminEmails || [];
+  const admins = window.CAMPUSSPOT_LOCAL?.adminEmails || [];
   const email = await modal(close => {
     const input = h('input', { type: 'email', required: true, placeholder: 'you@example.com', autocomplete: 'email', 'aria-label': 'Email' });
     const submit = e => { e.preventDefault(); if (input.value.includes('@')) close(input.value.trim()); };
@@ -112,7 +141,7 @@ export async function ensureName({ reason, force = false } = {}) {
   if (!force && session.boot.profile && !session.boot.profile.hidden) return true;
   const saved = await modal(close => {
     const hidden = session.boot.profile?.hidden;
-    const input = h('input', { type: 'text', maxlength: 20, minlength: 3, required: true, autocomplete: 'nickname', placeholder: 'e.g. BroncoBuster', 'aria-label': 'Leaderboard name', value: hidden ? '' : session.boot.profile?.displayName || '' });
+    const input = h('input', { type: 'text', maxlength: 20, minlength: 3, required: true, autocomplete: 'nickname', placeholder: 'e.g. QuadExplorer', 'aria-label': 'Leaderboard name', value: hidden ? '' : session.boot.profile?.displayName || '' });
     const error = h('p', { class: 'field-error', 'aria-live': 'polite' });
     const go = h('button', { type: 'submit', class: 'btn primary' }, 'Save name');
     const submit = async e => {

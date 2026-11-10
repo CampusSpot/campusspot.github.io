@@ -16,7 +16,7 @@ export async function adminPlayers(root) {
     list.replaceChildren(...players.filter(p => !q || p.name.toLowerCase().includes(q)).map(p => h('li', { class: p.hidden ? 'hidden-player' : '' },
       h('div', { class: 'grow' },
         h('strong', {}, p.name), p.hidden ? h('span', { class: 'badge' }, 'hidden') : null,
-        h('div', { class: 'small muted' }, `${p.plays} ranked round${p.plays === 1 ? '' : 's'} · ${points(p.total)} pts · joined ${formatTime(p.createdAt)}`)),
+        h('div', { class: 'small muted' }, `${p.campus ? `${p.campus} · ` : ''}${p.plays} ranked round${p.plays === 1 ? '' : 's'} · ${points(p.total)} pts · joined ${formatTime(p.createdAt)}`)),
       btn(p.hidden ? 'Show' : 'Hide', { icon: p.hidden ? 'eye' : 'eyeOff', class: 'small', onclick: async () => {
         try {
           await api.admin.setHidden(p.userId, !p.hidden);

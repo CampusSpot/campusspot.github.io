@@ -1,4 +1,4 @@
-// Runs PolySpot on this computer (http://localhost:3000, and on your phone over the same Wi-Fi).
+// Runs CampusSpot on this computer (http://localhost:3000, and on your phone over the same Wi-Fi).
 //
 //   Local mode (default until public/config.js has a Supabase URL; force it with: npm run local):
 //     the real database runs in-process (PGlite, saved in data/), sign-in is "type an email",
@@ -62,7 +62,7 @@ async function handle(req, res) {
     if (url.pathname === '/local-info.js') {
       // Overrides public/local-info.js: tells the page it's served from this computer, and how phones reach it.
       res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-store' });
-      return res.end(`window.POLYSPOT_LOCAL = ${JSON.stringify({ local: LOCAL, urls, adminEmails: LOCAL ? ADMIN_EMAILS : [] })};\n`);
+      return res.end(`window.CAMPUSSPOT_LOCAL = ${JSON.stringify({ local: LOCAL, urls, adminEmails: LOCAL ? ADMIN_EMAILS : [] })};\n`);
     }
     if (emulator && (await emulator(req, res, url))) return;
     if (req.method === 'GET' || req.method === 'HEAD') {
@@ -76,14 +76,14 @@ async function handle(req, res) {
 }
 
 const onError = port => err => {
-  console.error(err.code === 'EADDRINUSE' ? `Port ${port} is already in use: an older PolySpot is probably still running. Stop it, or use another port: PORT=3001 npm start` : err);
+  console.error(err.code === 'EADDRINUSE' ? `Port ${port} is already in use: an older CampusSpot is probably still running. Stop it, or use another port: PORT=3001 npm start` : err);
   process.exit(1);
 };
 
 http.createServer(handle).on('error', onError(PORT)).listen(PORT, HOST, () => {
   const lines = [
     '',
-    `  PolySpot is running — ${LOCAL ? 'LOCAL mode (test database on this computer)' : 'LIVE mode (your Supabase project)'}`,
+    `  CampusSpot is running — ${LOCAL ? 'LOCAL mode (test database on this computer)' : 'LIVE mode (your Supabase project)'}`,
     '',
     `  On this computer: http://localhost:${PORT}`,
     ...urls.http.map((u, i) => `  ${i ? '                  ' : 'On your phone:    '}${u}   (same Wi-Fi)`),

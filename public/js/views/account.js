@@ -1,9 +1,9 @@
-// Your account: leaderboard name, sign out, delete account.
+// Your account: leaderboard name, campus, class year, sign out, delete account.
 import { api } from '../api.js';
 import { mode } from '../backend.js';
 import { pageHeader } from '../components.js';
 import { icon } from '../icons.js';
-import { ensureName, googleButton, session, signOut } from '../session.js';
+import { currentCampus, ensureName, googleButton, refreshSession, session, signOut } from '../session.js';
 import { btn, confirmDialog, h, toast } from '../ui.js';
 import { footer } from './home.js';
 
@@ -35,6 +35,7 @@ export async function account(root) {
         btn(name ? 'Change name' : 'Choose a name', { icon: 'edit',
           onclick: () => ensureName({ force: true, reason: 'Pick a new leaderboard name. Your scores stay with you.' }) }),
         btn('Sign out', { icon: 'logout', onclick: () => signOut() }))),
+    schoolCard(),
     h('section', { class: 'card' },
       h('h2', {}, 'Contribute photos'),
       h('p', { class: 'small muted' }, boot.contributor === 'approved' || boot.isAdmin ? 'Submit campus photos for future rounds.' : 'Want to submit your own campus photos? Ask to become a contributor.'),
@@ -54,4 +55,32 @@ export async function account(root) {
     mode === 'local' ? h('p', { class: 'small muted center' }, 'Local test mode: data lives on this computer only.') : null,
     footer(),
   );
+}
+
+/** Your campus (one at a time, changeable) and an optional class year shown next to your name. */
+function schoolCard() {
+  const { boot } = session;
+  const campus = boot.campus || currentCampus();
+  const thisYear = session.boot.today ? Number(session.boot.today.slice(0, 4)) : new Date().getFullYear();
+  const years = Array.from({ length: 17 }, (_, i) => thisYear - 10 + i);
+  const year = h('select', { 'aria-label': 'Graduation year', onchange: async e => {
+    const value = e.target.value ? Number(e.target.value) : null;
+    if (!(await ensureName({ reason: 'Choose a leaderboard name first. Your class year shows next to it.' }))) { e.target.value = boot.profile?.gradYear ?? ''; return; }
+    try {
+      await api.setGradYear(value);
+      await refreshSession();
+      toast(value ? `Class of ${value} saved` : 'Class year removed');
+    } catch (err) { toast(err.message, 'error'); }
+  } },
+  h('option', { value: '' }, 'Don’t show'),
+  years.map(y => h('option', { value: y, selected: boot.profile?.gradYear === y }, `Class of ${y}`)));
+  return h('section', { class: 'card' },
+    h('h2', {}, 'Your campus'),
+    h('div', { class: 'profile' },
+      h('span', { class: 'avatar' }, icon('school', { size: 20 })),
+      h('div', { class: 'grow' },
+        h('strong', {}, campus ? campus.name : 'No campus yet'),
+        h('div', { class: 'small muted' }, 'Your scores count on this campus’s leaderboard. You can switch anytime; you’re on one campus at a time.')),
+      btn(campus ? 'Change' : 'Pick', { href: '#/pick', class: 'small' })),
+    h('label', { class: 'field' }, h('span', {}, 'Graduation year (optional, shown next to your name)'), year));
 }

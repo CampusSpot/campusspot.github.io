@@ -9,6 +9,7 @@ import { scoreGuess } from '../public/shared/scoring.js';
 
 let db, today, yesterday, tomorrow;
 const ADMIN = 'boss@example.com';
+const CPP = 'cal-poly-pomona';
 const people = {};
 function person(name, email, provider = 'google') {
   const id = randomUUID();
@@ -47,7 +48,7 @@ test('bootstrap: guests vs players vs admins (admin needs the right provider too
   assert.equal((await db.rpc('get_bootstrap', {}, as('ana'))).isAdmin, false);
   assert.equal((await db.rpc('get_bootstrap', {}, as('admin'))).isAdmin, true);
   assert.equal((await db.rpc('get_bootstrap', {}, as('fake'))).isAdmin, false, 'same email via email/password sign-up is not admin');
-  assert.equal((await db.rpc('get_maps'))[0].id, 'campus');
+  assert.equal((await db.rpc('get_maps', { p_campus: CPP }))[0].id, 'campus');
 });
 
 test('tables are locked: no direct reads or writes from the public API', async () => {
@@ -74,14 +75,14 @@ test('only admins can create rounds and use admin tools', async () => {
 });
 
 test('scheduled rounds stay hidden from players until their day', async () => {
-  const ids = (await db.rpc('list_rounds')).map(r => r.id);
+  const ids = (await db.rpc('list_rounds', { p_campus: CPP })).map(r => r.id);
   assert.ok(ids.includes(todayRound.id) && ids.includes(pastRound.id));
   assert.ok(!ids.includes(futureRound.id));
-  assert.ok(!(await db.rpc('list_rounds', { p_include_scheduled: true }, as('ana'))).some(r => r.id === futureRound.id));
-  assert.ok((await db.rpc('list_rounds', { p_include_scheduled: true }, as('admin'))).some(r => r.id === futureRound.id));
+  assert.ok(!(await db.rpc('list_rounds', { p_campus: CPP, p_include_scheduled: true }, as('ana'))).some(r => r.id === futureRound.id));
+  assert.ok((await db.rpc('list_rounds', { p_campus: CPP, p_include_scheduled: true }, as('admin'))).some(r => r.id === futureRound.id));
   await rejects(db.rpc('get_round', { p_id: futureRound.id }, as('ana')), /P0002/);
   await rejects(db.rpc('submit_guess', { p_round: futureRound.id, p_pos: truth.pos, p_heading: 0 }, as('ana')), /P0002/);
-  assert.equal((await db.rpc('get_today')).id, todayRound.id);
+  assert.equal((await db.rpc('get_today', { p_campus: CPP })).id, todayRound.id);
 });
 
 test('names: rules, blocked words, uniqueness', async () => {
@@ -95,6 +96,7 @@ test('names: rules, blocked words, uniqueness', async () => {
   await db.rpc('set_display_name', { p_name: 'Ben' }, as('ben'));
   await db.rpc('set_display_name', { p_name: 'Cy' + '_9' }, as('cy'));
   await db.rpc('set_display_name', { p_name: 'Boss' }, as('admin'));
+  for (const n of ['ana', 'ben', 'cy', 'admin']) await db.rpc('join_campus', { p_campus: CPP }, as(n));
 });
 
 test("today's round: guests play unsaved; players need a name, get one ranked try", async () => {
@@ -155,37 +157,37 @@ test('bad guesses are refused', async () => {
 });
 
 test('leaderboards: order, me flag, hidden names, overall totals', async () => {
-  const lb = await db.rpc('leaderboard_round', {}, as('ana'));
+  const lb = await db.rpc('leaderboard_round', { p_campus: CPP }, as('ana'));
   assert.equal(lb.round.id, todayRound.id);
   assert.deepEqual(lb.rows.map(r => r.name), ['Ben', 'Ana Bronco']);
   assert.equal(lb.rows[1].me, true);
   assert.equal(lb.rows[0].place, 1);
 
   await db.rpc('admin_set_hidden', { p_user: people.ben.id, p_hidden: true }, as('admin'));
-  assert.deepEqual((await db.rpc('leaderboard_round')).rows.map(r => r.name), ['Ana Bronco']);
+  assert.deepEqual((await db.rpc('leaderboard_round', { p_campus: CPP })).rows.map(r => r.name), ['Ana Bronco']);
   assert.equal((await db.rpc('get_bootstrap', {}, as('ben'))).profile.hidden, true);
   await db.rpc('set_display_name', { p_name: 'Benjamin' }, as('ben')); // a new name un-hides
-  assert.deepEqual((await db.rpc('leaderboard_round')).rows.map(r => r.name), ['Benjamin', 'Ana Bronco']);
+  assert.deepEqual((await db.rpc('leaderboard_round', { p_campus: CPP })).rows.map(r => r.name), ['Benjamin', 'Ana Bronco']);
 
-  const overall = await db.rpc('leaderboard_overall');
+  const overall = await db.rpc('leaderboard_overall', { p_campus: CPP });
   assert.equal(overall[0].name, 'Benjamin');
   assert.equal(overall[0].total, 10000);
   assert.equal(overall[0].rounds, 1);
-  assert.deepEqual(await db.rpc('leaderboard_overall', { p_days: 0 }), []);
+  assert.deepEqual(await db.rpc('leaderboard_overall', { p_campus: CPP, p_days: 0 }), []);
   const players = await db.rpc('admin_players', {}, as('admin'));
   assert.ok(players.some(p => p.name === 'Benjamin' && p.plays === 1));
 });
 
 test('admin: maps are validated, rounds can be edited and deleted', async () => {
   const area = await db.rpc('admin_save_map', { p_map: {
-    name: 'North campus', bounds: { sw: { lat: 34.05, lng: -117.83 }, ne: { lat: 34.06, lng: -117.82 } },
+    campusId: CPP, name: 'North campus', bounds: { sw: { lat: 34.05, lng: -117.83 }, ne: { lat: 34.06, lng: -117.82 } },
     features: [{ label: 'Fountain', pos: { lat: 40, lng: -117.825 } }, { label: 'bad', pos: { x: 1, y: 2 } }],
   } }, as('admin'));
   assert.equal(area.type, 'latlng');
   assert.deepEqual(area.features.map(f => f.pos), [{ lat: 34.06, lng: -117.825 }], 'labels are kept inside, malformed ones dropped');
   await rejects(db.rpc('admin_save_map', { p_map: { bounds: { sw: { lat: 34.06, lng: -117.82 }, ne: { lat: 34.05, lng: -117.83 } } } }, as('admin')), /Invalid play area/);
   await rejects(db.rpc('admin_save_map', { p_map: { type: 'latlng', bounds: { sw: { lat: 30, lng: -120 }, ne: { lat: 35, lng: -110 } } } }, as('admin')), /too big/);
-  const campus = (await db.rpc('get_maps')).find(m => m.id === 'campus');
+  const campus = (await db.rpc('get_maps', { p_campus: CPP })).find(m => m.id === 'campus');
   const relabeled = await db.rpc('admin_save_map', { p_map: { ...campus, features: [{ label: 'Library', kind: 'building', source: 'osm', pos: { lat: 34.0577, lng: -117.8223 } }] } }, as('admin'));
   assert.equal(relabeled.type, 'latlng');
   assert.equal(relabeled.features[0].source, 'osm');
@@ -202,14 +204,14 @@ test('admin: maps are validated, rounds can be edited and deleted', async () => 
 
 test('delete my account removes my name and scores', async () => {
   await db.rpc('delete_my_account', {}, as('ana'));
-  const lb = await db.rpc('leaderboard_round');
+  const lb = await db.rpc('leaderboard_round', { p_campus: CPP });
   assert.deepEqual(lb.rows.map(r => r.name), ['Benjamin']);
   assert.equal((await db.rpc('get_bootstrap', {}, as('ana'))).profile, null);
 });
 
 test('SQL scoring matches the JavaScript scoring', async () => {
   const cfg = (await db.rpc('get_bootstrap')).scoring;
-  const campus = (await db.rpc('get_maps')).find(m => m.id === 'campus');
+  const campus = (await db.rpc('get_maps', { p_campus: CPP })).find(m => m.id === 'campus');
   // a tiny play area too (about 200 m), where small distances swing the score a lot
   const small = { type: 'latlng', bounds: { sw: { lat: 34.0570, lng: -117.8230 }, ne: { lat: 34.0585, lng: -117.8210 } } };
   let seed = 7;
@@ -238,6 +240,8 @@ test('contributors: request, approval, submissions, review queue and scheduling'
 
   await rejects(db.rpc('request_contributor', { p_note: 'hi' }, as('eve')), /needs_name/);
   await db.rpc('set_display_name', { p_name: 'Eve Photos' }, as('eve'));
+  await rejects(db.rpc('request_contributor', { p_note: 'hi' }, as('eve')), /needs_campus/);
+  await db.rpc('join_campus', { p_campus: CPP }, as('eve'));
   await rejects(db.rpc('submit_round', { p: photo }, as('eve')), /approved contributors/);
   assert.equal(await db.rpc('request_contributor', { p_note: 'I take lots of campus photos' }, as('eve')), 'pending');
   assert.equal((await db.rpc('get_bootstrap', {}, as('eve'))).contributor, 'pending');
@@ -259,14 +263,14 @@ test('contributors: request, approval, submissions, review queue and scheduling'
   await rejects(db.rpc('get_round', { p_id: s1.id }, as('ana')), /P0002/);
   await rejects(db.rpc('get_round', { p_id: s1.id }), /P0002/);
   assert.equal((await db.rpc('get_round', { p_id: s1.id }, as('eve'))).round.status, 'pending');
-  assert.ok(!(await db.rpc('list_rounds', { p_include_scheduled: true }, as('admin'))).some(r => r.id === s1.id), 'not in the schedule until approved');
+  assert.ok(!(await db.rpc('list_rounds', { p_campus: CPP, p_include_scheduled: true }, as('admin'))).some(r => r.id === s1.id), 'not in the schedule until approved');
   assert.deepEqual((await db.rpc('admin_review_queue', {}, as('admin'))).map(r => r.title), ['Eve 1', 'Eve 2', 'Eve 3']);
   assert.equal((await db.rpc('admin_review_queue', {}, as('admin')))[0].submittedBy, 'Eve Photos');
   await rejects(db.rpc('admin_review_queue', {}, as('eve')), /42501/);
   await rejects(db.rpc('admin_approve_round', { p_id: s1.id }, as('eve')), /42501/);
 
   // approvals fill the next open days, one per day
-  const busy = new Set((await db.rpc('list_rounds', { p_include_scheduled: true }, as('admin'))).map(r => r.date));
+  const busy = new Set((await db.rpc('list_rounds', { p_campus: CPP, p_include_scheduled: true }, as('admin'))).map(r => r.date));
   const a1 = await db.rpc('admin_approve_round', { p_id: s1.id }, as('admin'));
   const a2 = await db.rpc('admin_approve_round', { p_id: s2.id }, as('admin'));
   assert.equal(a1.status, 'published');
@@ -279,7 +283,7 @@ test('contributors: request, approval, submissions, review queue and scheduling'
   assert.equal(st.status, 'stored');
   assert.equal(st.date, null);
   assert.equal((await db.rpc('admin_review_queue', {}, as('admin')))[0].status, 'stored');
-  assert.ok(!(await db.rpc('list_rounds', { p_include_scheduled: true }, as('admin'))).some(r => r.id === s3.id), 'stored rounds are not scheduled');
+  assert.ok(!(await db.rpc('list_rounds', { p_campus: CPP, p_include_scheduled: true }, as('admin'))).some(r => r.id === s3.id), 'stored rounds are not scheduled');
   await rejects(db.rpc('admin_approve_round', { p_id: s3.id, p_date: '2000-01-01' }, as('admin')), /today or a later day/);
   const s4 = await db.rpc('submit_round', { p: { ...photo, title: 'Eve 4' } }, as('eve'));
   const custom = await db.rpc('admin_approve_round', { p_id: s4.id, p_date: '2099-03-04' }, as('admin'));
@@ -295,4 +299,66 @@ test('contributors: request, approval, submissions, review queue and scheduling'
   // denied contributors can't submit
   await db.rpc('admin_set_contributor', { p_user: eve.id, p_status: 'denied' }, as('admin'));
   await rejects(db.rpc('submit_round', { p: photo }, as('eve')), /approved contributors/);
+});
+
+test('campuses: one per player, switching, per-campus rounds and leaderboards, grad year', async () => {
+  const campuses = await db.rpc('get_campuses');
+  assert.ok(campuses.length > 150, 'California colleges are seeded');
+  assert.ok(campuses.some(c => c.id === 'ucla' && c.short === 'UCLA'));
+  await rejects(db.rpc('join_campus', { p_campus: 'nope' }, as('ben')), /needs_campus/);
+  await rejects(db.rpc('join_campus', { p_campus: 'ucla' }), /sign in|permission denied/i);
+
+  // every campus starts with a default map around its center
+  const [uclaMap] = await db.rpc('get_maps', { p_campus: 'ucla' });
+  assert.equal(uclaMap.campusId, 'ucla');
+  assert.ok(uclaMap.bounds.sw.lat < 34.0689 && uclaMap.bounds.ne.lat > 34.0689);
+  assert.equal((await db.rpc('get_maps', { p_campus: 'ucla' })).length, 1, 'only made once');
+
+  // UCLA's round doesn't show at Cal Poly Pomona, and the days are independent
+  const before = (await db.rpc('get_today', { p_campus: CPP })).id;
+  const ucla = await newRound(today, { mapId: uclaMap.id, truth: { pos: { lat: 34.07, lng: -118.444 }, heading: 10 } });
+  assert.equal(ucla.campusId, 'ucla');
+  assert.equal((await db.rpc('get_today', { p_campus: 'ucla' })).id, ucla.id);
+  assert.equal((await db.rpc('get_today', { p_campus: CPP })).id, before);
+  assert.ok(!(await db.rpc('list_rounds', { p_campus: CPP })).some(r => r.id === ucla.id));
+
+  // a CPP member playing UCLA's round is scored but not ranked
+  person('dee', 'dee@example.com'); await db.ensureUser(people.dee.id, 'dee@example.com');
+  await db.rpc('set_display_name', { p_name: 'Dee' }, as('dee'));
+  await db.rpc('join_campus', { p_campus: 'ucla' }, as('dee'));
+  const deeRes = await db.rpc('submit_guess', { p_round: ucla.id, p_pos: { lat: 34.07, lng: -118.444 }, p_heading: 10 }, as('dee'));
+  assert.equal(deeRes.guesses[0].ranked, true);
+  const anaRes = await db.rpc('submit_guess', { p_round: ucla.id, p_pos: { lat: 34.07, lng: -118.444 }, p_heading: 10 }, as('ben'));
+  assert.equal(anaRes.guesses[0].ranked, false, 'not a member of UCLA');
+  assert.deepEqual((await db.rpc('leaderboard_round', { p_campus: 'ucla' })).rows.map(r => r.name), ['Dee']);
+  assert.deepEqual((await db.rpc('leaderboard_overall', { p_campus: 'ucla' })).map(r => r.name), ['Dee']);
+  assert.ok(!(await db.rpc('leaderboard_overall', { p_campus: CPP })).some(r => r.name === 'Dee'));
+
+  // switching campus moves you between leaderboards; switching back brings your scores back
+  const cppBoard = async () => (await db.rpc('leaderboard_overall', { p_campus: CPP })).map(r => r.name);
+  assert.ok((await cppBoard()).includes('Benjamin'));
+  assert.equal((await db.rpc('join_campus', { p_campus: 'ucla' }, as('ben'))).id, 'ucla');
+  assert.equal((await db.rpc('get_bootstrap', {}, as('ben'))).campus.id, 'ucla');
+  assert.ok(!(await cppBoard()).includes('Benjamin'), 'left CPP');
+  await db.rpc('join_campus', { p_campus: CPP }, as('ben'));
+  assert.ok((await cppBoard()).includes('Benjamin'), 'back on CPP');
+
+  // grad year
+  await db.rpc('set_grad_year', { p_year: 2027 }, as('dee'));
+  assert.equal((await db.rpc('get_bootstrap', {}, as('dee'))).profile.gradYear, 2027);
+  assert.equal((await db.rpc('leaderboard_overall', { p_campus: 'ucla' }))[0].gradYear, 2027);
+  await rejects(db.rpc('set_grad_year', { p_year: 1800 }, as('dee')), /graduation year/);
+  await db.rpc('set_grad_year', { p_year: null }, as('dee'));
+  assert.equal((await db.rpc('get_bootstrap', {}, as('dee'))).profile.gradYear, null);
+
+  // contributors submit for their own campus only
+  const eveId = people.eve.id;
+  await db.rpc('admin_set_contributor', { p_user: eveId, p_status: 'approved' }, as('admin'));
+  const photo = { mapId: uclaMap.id, photoPath: `${randomUUID()}.jpg`, difficulty: 'easy', truth: { pos: { lat: 34.07, lng: -118.444 }, heading: 0 } };
+  await rejects(db.rpc('submit_round', { p: photo }, as('eve')), /own campus/);
+  await db.rpc('join_campus', { p_campus: 'ucla' }, as('eve'));
+  const sub = await db.rpc('submit_round', { p: photo }, as('eve'));
+  assert.equal((await db.rpc('admin_review_queue', {}, as('admin'))).find(r => r.id === sub.id).campus, 'UCLA');
+  const approved = await db.rpc('admin_approve_round', { p_id: sub.id }, as('admin'));
+  assert.notEqual(approved.date, today, 'UCLA already has a round today, so the next free UCLA day');
 });

@@ -1,8 +1,8 @@
 // Connection to the backend (Supabase): database functions, sign-in, and photo storage.
 // Live site: your Supabase project from config.js. Local mode (npm start on your computer):
 // the local server answers the same requests with a test database.
-const config = window.POLYSPOT_CONFIG || {};
-const local = window.POLYSPOT_LOCAL;
+const config = window.CAMPUSSPOT_CONFIG || {};
+const local = window.CAMPUSSPOT_LOCAL;
 
 /** 'live' (Supabase), 'local' (npm start, test database) or 'unconfigured' (published without Supabase yet) */
 export const mode = local?.local ? 'local' : config.supabaseUrl ? 'live' : 'unconfigured';
@@ -13,7 +13,7 @@ export const sb = mode === 'unconfigured' ? null : window.supabase.createClient(
   mode === 'live' ? config.supabaseUrl : location.origin,
   mode === 'live' ? config.supabaseAnonKey : 'local-mode',
   {
-    auth: { flowType: 'pkce', detectSessionInUrl: mode === 'live', persistSession: true, autoRefreshToken: true, storageKey: 'polyspot-auth' },
+    auth: { flowType: 'pkce', detectSessionInUrl: mode === 'live', persistSession: true, autoRefreshToken: true, storageKey: 'campusspot-auth' },
   },
 );
 

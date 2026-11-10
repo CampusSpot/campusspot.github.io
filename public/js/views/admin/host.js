@@ -9,13 +9,15 @@ import { createMapView } from '../../map/index.js';
 import { dataUrlToBytes, fileToJpeg } from '../../photo.js';
 import { scoring, session } from '../../session.js';
 import { btn, formatDate, h, toast } from '../../ui.js';
-import { adminNav, nextFreeDate } from './common.js';
+import { adminCampus, adminNav, nextFreeDate } from './common.js';
 
 export const adminHost = root => roundForm(root, { admin: true });
 export const contributeNew = root => roundForm(root, { admin: false });
 
 async function roundForm(root, { admin }) {
-  const [maps, rounds] = await Promise.all([api.maps(), admin ? api.rounds(true) : []]);
+  const campus = admin ? adminCampus() : session.boot.campus;
+  if (!campus) { location.replace('#/pick'); return; }
+  const [maps, rounds] = await Promise.all([api.maps(campus.id), admin ? api.rounds(true, campus.id) : []]);
   const nav = () => (admin ? adminNav() : null);
   const today = session.boot.today;
   const state = {
@@ -122,8 +124,8 @@ async function roundForm(root, { admin }) {
   if (!admin) saveBtn.lastChild.textContent = 'Submit for review';
   root.append(
     nav(),
-    admin ? pageHeader('New round', { sub: 'Only admins can see this page.' })
-      : pageHeader('Submit a photo', { back: '#/contribute', sub: 'Photos are reviewed by an admin before they’re scheduled.' }),
+    admin ? pageHeader(`New round at ${campus.short}`, { sub: 'Only admins can see this page.' })
+      : pageHeader(`Submit a photo of ${campus.short}`, { back: '#/contribute', sub: 'Photos are reviewed by an admin before they’re scheduled.' }),
     card(
       h('h2', {}, '1. Photo'),
       h('div', { class: 'row wrap' },

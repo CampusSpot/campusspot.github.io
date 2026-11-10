@@ -21,7 +21,7 @@ async function signIn(email) {
 }
 
 before(async () => {
-  dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'polyspot-local-'));
+  dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'campusspot-local-'));
   db = await openDb({ adminEmails: ['admin@example.com'] });
   const emulator = createEmulator({ db, dataDir });
   server = http.createServer(async (req, res) => {

@@ -1,7 +1,7 @@
 // Contribute photos: ask for access, then submit photos and follow their review.
 import { api } from '../api.js';
 import { pageHeader, roundSummary } from '../components.js';
-import { ensureName, googleButton, refreshSession, session } from '../session.js';
+import { currentCampus, ensureName, googleButton, refreshSession, session } from '../session.js';
 import { btn, formatDate, h, toast } from '../ui.js';
 import { footer } from './home.js';
 
@@ -14,12 +14,19 @@ const STATUS = {
 
 export async function contribute(root) {
   const { user, boot } = session;
-  root.append(pageHeader('Contribute photos', { sub: 'Help keep a new photo up every day.' }));
+  const campus = boot.campus || currentCampus();
+  root.append(pageHeader('Contribute photos', { sub: `Help keep a new photo of ${campus.short} up every day.` }));
 
   if (!user) {
     root.append(h('section', { class: 'card stack' },
       h('p', {}, 'Contributors take photos around campus and submit them with the answer. Sign in to ask for access.'),
       googleButton('Sign in with Google')), footer());
+    return;
+  }
+
+  if (!boot.campus) {
+    root.append(h('section', { class: 'card stack' }, h('p', {}, 'Join your campus first. Contributors submit photos of their own campus.'),
+      btn('Pick your campus', { href: '#/pick', class: 'primary' })), footer());
     return;
   }
 
@@ -32,7 +39,7 @@ export async function contribute(root) {
   const subs = await api.mySubmissions();
   root.append(
     h('section', { class: 'card' },
-      h('p', {}, 'Take a photo somewhere on campus, mark where you stood and which way you faced, and submit it. An admin reviews each photo; approved photos are scheduled for the next open day.'),
+      h('p', {}, `Take a photo somewhere at ${boot.campus.short}, mark where you stood and which way you faced, and submit it. An admin reviews each photo; approved photos are scheduled for the next open day.`),
       h('p', { class: 'small muted' }, 'Avoid people’s faces, license plates, ID cards and room numbers, and stay out of closed areas. You won’t be ranked on your own photos.'),
       btn('Submit a photo', { href: '#/contribute/new', class: 'primary' })),
     h('h2', { class: 'section-title' }, `Your submissions (${subs.length})`),

@@ -1,5 +1,5 @@
 {
-  "name": "polyspot",
+  "name": "campusspot",
   "version": "0.1.0",
   "private": true,
   "description": "Daily campus photo game for Cal Poly Pomona: guess where a photo was taken and which way the camera faced.",
@@ -11,13 +11,13 @@
     "campus",
     "cal-poly-pomona"
   ],
-  "homepage": "https://polyspot.github.io/",
+  "homepage": "https://campusspot.github.io/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/PolySpot/polyspot.github.io.git"
+    "url": "git+https://github.com/CampusSpot/campusspot.github.io.git"
   },
   "bugs": {
-    "url": "https://github.com/PolySpot/polyspot.github.io/issues"
+    "url": "https://github.com/CampusSpot/campusspot.github.io/issues"
   },
   "license": "MIT",
   "type": "module",

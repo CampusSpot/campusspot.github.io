@@ -9,7 +9,7 @@ import { btn, formatDate, formatTime, h, modal, toast } from '../../ui.js';
 import { adminNav, nextFreeDate } from './common.js';
 
 export async function adminReview(root) {
-  const [items, maps, rounds] = await Promise.all([api.admin.reviewQueue(), api.maps(), api.rounds(true)]);
+  const items = await api.admin.reviewQueue();
   const today = session.boot.today;
   const header = h('div');
   const waitingList = h('ul', { class: 'review-list' });
@@ -21,7 +21,7 @@ export async function adminReview(root) {
     h('img', { class: 'preview', src: photoUrl(r.photoPath), alt: 'Submitted photo' }),
     h('div', { class: 'review-meta' },
       h('strong', {}, r.title || 'Untitled'), ' ', difficultyBadge(r.difficulty),
-      h('div', { class: 'small muted' }, `By ${r.submittedBy}${r.submitterEmail ? ` (${r.submitterEmail})` : ''} · ${formatTime(r.createdAt)}`)),
+      h('div', { class: 'small muted' }, `${r.campus || ''} · by ${r.submittedBy}${r.submitterEmail ? ` (${r.submitterEmail})` : ''} · ${formatTime(r.createdAt)}`)),
     h('div', { class: 'row wrap' },
       btn('Check answer', { onclick: () => showAnswer(r) }),
       btn(r.status === 'stored' ? 'Schedule' : 'Approve', { class: 'primary', onclick: () => approve(r) }),
@@ -39,7 +39,7 @@ export async function adminReview(root) {
   const drop = r => { items.splice(items.indexOf(r), 1); render(); };
 
   async function showAnswer(r) {
-    const answer = await api.admin.answer(r.id);
+    const [answer, maps] = await Promise.all([api.admin.answer(r.id), api.maps(r.campusId)]);
     const map = maps.find(m => m.id === r.mapId);
     await modal(close => {
       const box = h('div', { class: 'map-box' });
@@ -54,7 +54,8 @@ export async function adminReview(root) {
   }
 
   // Returns { when: 'next' | 'date' | 'store', date } or null if cancelled.
-  function pickWhen(r) {
+  async function pickWhen(r) {
+    const rounds = await api.rounds(true, r.campusId);
     const next = nextFreeDate(rounds, today);
     return modal(close => {
       let when = 'next';
@@ -95,9 +96,8 @@ export async function adminReview(root) {
         return;
       }
       const done = await api.admin.approve(r.id, choice.when === 'date' ? choice.date : null);
-      rounds.push(done);
       drop(r);
-      toast(done.date === today ? 'Approved. It’s live now as today’s round.' : `Scheduled for ${formatDate(done.date, today)}.`);
+      toast(done.date === today ? `Approved. It’s live now as today’s ${r.campus} round.` : `Scheduled at ${r.campus} for ${formatDate(done.date, today)}.`);
     } catch (err) { toast(err.message, 'error'); }
   }
 

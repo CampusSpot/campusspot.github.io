@@ -77,7 +77,8 @@ export function leaderboardList(rows, { columns = 'round', empty = 'No scores ye
   if (!rows.length) return h('p', { class: 'muted empty' }, empty);
   return h('ol', { class: 'board' }, rows.map(r => h('li', { class: r.me ? 'me' : '' },
     h('span', { class: `place p${r.place}` }, r.place),
-    h('span', { class: 'who' }, r.name, r.me ? h('span', { class: 'you' }, 'You') : null),
+    h('span', { class: 'who' }, r.name, r.gradYear ? h('span', { class: 'year', title: `Class of ${r.gradYear}` }, `’${String(r.gradYear).slice(2)}`) : null,
+      r.me ? h('span', { class: 'you' }, 'You') : null),
     columns === 'round'
       ? h('span', { class: 'detail' }, `${formatDistance(r.distance)} · ${Math.round(r.angleError)}°`)
       : h('span', { class: 'detail' }, `${r.rounds} round${r.rounds === 1 ? '' : 's'} · avg ${points(r.average)}`),

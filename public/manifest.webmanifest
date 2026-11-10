@@ -1,11 +1,11 @@
 {
-  "name": "PolySpot",
-  "short_name": "PolySpot",
+  "name": "CampusSpot",
+  "short_name": "CampusSpot",
   "description": "Daily campus photo game: guess where it was taken and which way the camera faced.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f4f2ec",
-  "theme_color": "#1e4d2b",
+  "theme_color": "#1b2f4a",
   "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
 }

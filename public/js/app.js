@@ -3,7 +3,7 @@
 // actions anyway.
 import { mode } from './backend.js';
 import { icon } from './icons.js';
-import { googleButton, initSession, onSessionChange, session } from './session.js';
+import { currentCampus, googleButton, initSession, onSessionChange, session } from './session.js';
 import { h, loading } from './ui.js';
 import { home, setupNeeded } from './views/home.js';
 import { play, playToday } from './views/play.js';
@@ -19,9 +19,11 @@ import { adminContributors } from './views/admin/contributors.js';
 import { contribute } from './views/contribute.js';
 import { adminMaps } from './views/admin/maps.js';
 import { adminPlayers } from './views/admin/players.js';
+import { pickCampus } from './views/pick.js';
 
 const routes = [
   ['/', home],
+  ['/pick', pickCampus],
   ['/play/today', playToday, { fullscreen: true }],
   ['/play/:id', play, { fullscreen: true }],
   ['/result/:id', result],
@@ -54,11 +56,13 @@ const TABS = [
 ];
 
 const accountSlot = h('div', { class: 'account-slot' });
+const campusSlot = h('div', { class: 'campus-slot' });
 const tabbar = h('nav', { class: 'tabbar', 'aria-label': 'Main' });
 const view = h('main', { id: 'view', class: 'view', tabindex: '-1' });
 document.getElementById('app').replaceChildren(
   h('header', { class: 'topbar' },
-    h('a', { class: 'brand', href: '#/', 'aria-label': 'PolySpot home' }, h('span', { class: 'brand-mark', 'aria-hidden': 'true' }), h('span', { class: 'wordmark' }, 'PolySpot')),
+    h('a', { class: 'brand', href: '#/', 'aria-label': 'CampusSpot home' }, h('span', { class: 'brand-mark', 'aria-hidden': 'true' }), h('span', { class: 'wordmark' }, 'CampusSpot')),
+    campusSlot,
     accountSlot),
   view,
   tabbar);
@@ -68,6 +72,10 @@ const path = () => (location.hash.replace(/^#/, '').split('?')[0] || '/');
 function renderChrome() {
   const p = path();
   const { boot, user } = session;
+  const campus = currentCampus();
+  campusSlot.replaceChildren(campus && mode !== 'unconfigured'
+    ? h('a', { class: 'campus-chip', href: '#/pick', 'aria-label': `Campus: ${campus.name}. Change campus` }, h('span', {}, campus.short), icon('chevron-down', { size: 14 }))
+    : null);
   accountSlot.replaceChildren(user
     ? h('a', { class: 'avatar-chip', href: '#/account', 'aria-label': 'Your account' },
       h('span', { class: 'avatar' }, (boot.profile?.displayName || user.email || '?').slice(0, 1).toUpperCase()),
@@ -87,8 +95,11 @@ async function render() {
   const p = path();
   const found = routes.find(r => r.re.test(p));
   // Before the site is connected to its database, only the legal pages work (Google asks for their links).
-  const route = mode === 'unconfigured' && !['/about', '/privacy', '/terms'].includes(p) ? { view: setupNeeded } : found;
+  const open = ['/about', '/privacy', '/terms'].includes(p);
+  const route = mode === 'unconfigured' && !open ? { view: setupNeeded } : found;
   if (!route) return location.replace('#/');
+  // Everyone picks a campus first (shared links to a round or the legal pages still open directly).
+  if (mode !== 'unconfigured' && !currentCampus() && !open && p !== '/pick' && !/^\/(play|result)\//.test(p)) return location.replace('#/pick');
   document.body.classList.toggle('fullscreen', !!route.fullscreen);
   renderChrome();
   const container = h('div', { class: 'view-inner' });
@@ -96,7 +107,7 @@ async function render() {
   window.scrollTo(0, 0);
   if (route.admin && !session.boot.isAdmin) {
     container.append(h('div', { class: 'empty-state' }, icon('shield', { size: 40 }), h('h1', {}, 'Admins only'),
-      h('p', { class: 'muted' }, 'This page is for the people who run PolySpot.')));
+      h('p', { class: 'muted' }, 'This page is for the people who run CampusSpot.')));
     return;
   }
   if (route.contributor && !session.boot.isAdmin && session.boot.contributor !== 'approved') return location.replace('#/contribute');
@@ -116,7 +127,7 @@ async function render() {
 }
 
 // Re-render when the player changes (sign-in/out, name, admin); otherwise just refresh the top bar.
-const identity = () => `${session.user?.id}|${session.boot.isAdmin}|${session.boot.profile?.displayName}|${session.boot.profile?.hidden}`;
+const identity = () => `${currentCampus()?.id}|${session.user?.id}|${session.boot.isAdmin}|${session.boot.profile?.displayName}|${session.boot.profile?.hidden}`;
 let lastIdentity = identity();
 onSessionChange(() => {
   const now = identity();

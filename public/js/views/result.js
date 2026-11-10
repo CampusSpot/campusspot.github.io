@@ -4,7 +4,7 @@ import { photoUrl } from '../backend.js';
 import { difficultyBadge, pageHeader } from '../components.js';
 import { icon } from '../icons.js';
 import { createMapView } from '../map/index.js';
-import { googleButton, scoring, session } from '../session.js';
+import { currentCampus, googleButton, scoring, session } from '../session.js';
 import { formatLength } from '../units.js';
 import { btn, formatDate, formatTime, h, points, toast } from '../ui.js';
 
@@ -73,7 +73,8 @@ export async function result(root, roundId) {
 
   async function share() {
     const g = current;
-    const text = `PolySpot ${formatDate(round.date, '')}: ${points(g.total)}/${points(g.max)}\n📍 ${formatLength(g.distance, map.units)} off · 🧭 ${Math.round(g.angleError)}° off${g.ranked && rank ? ` · #${rank.place} of ${rank.of}` : ''}\n${location.origin + location.pathname}`;
+    const where = currentCampus()?.id === round.campusId ? ` ${currentCampus().short}` : '';
+    const text = `CampusSpot${where} ${formatDate(round.date, '')}: ${points(g.total)}/${points(g.max)}\n📍 ${formatLength(g.distance, map.units)} off · 🧭 ${Math.round(g.angleError)}° off${g.ranked && rank ? ` · #${rank.place} of ${rank.of}` : ''}\n${location.origin + location.pathname}`;
     try {
       if (navigator.share) await navigator.share({ text });
       else { await navigator.clipboard.writeText(text); toast('Copied, ready to paste'); }

@@ -2,7 +2,7 @@
 // Your Supabase project. These two values are safe to publish:
 // the publishable key only allows what the database rules allow. NEVER put a secret key
 // (sb_secret_… or the old "service_role" key) here, or anywhere in this repository.
-window.POLYSPOT_CONFIG = {
+window.CAMPUSSPOT_CONFIG = {
   // Supabase → Project Settings → Data API → Project URL, e.g. 'https://abcdefghijkl.supabase.co'
   supabaseUrl: 'https://gomaogfmhyoxmziekwcr.supabase.co',
   // Supabase → Project Settings → API Keys → Publishable key (sb_publishable_…; the older "anon" key also works)

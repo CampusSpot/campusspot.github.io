@@ -5,10 +5,11 @@ import { api } from '../../api.js';
 import { card, pageHeader } from '../../components.js';
 import { createMapView } from '../../map/index.js';
 import { btn, h, toast } from '../../ui.js';
-import { adminNav } from './common.js';
+import { adminCampus, adminNav } from './common.js';
 
 export async function adminMaps(root, id) {
-  const maps = await api.maps();
+  const campus = adminCampus();
+  const maps = await api.maps(campus.id);
   const source = (id && maps.find(x => x.id === id)) || maps[0];
   if (!source) {
     root.append(adminNav(), pageHeader('Map'), card(h('p', { class: 'muted' }, 'No map found. Re-run the database setup script to add the campus map.')));
@@ -65,7 +66,7 @@ export async function adminMaps(root, id) {
 
   async function save({ quiet = false } = {}) {
     try {
-      const saved = await api.admin.saveMap({ ...m, name: m.name || 'Campus' });
+      const saved = await api.admin.saveMap({ ...m, campusId: m.campusId || campus.id, name: m.name || campus.name });
       Object.assign(m, saved);
       history.replaceState(null, '', `#/admin/maps/${saved.id}`);
       if (!quiet) toast('Map saved');

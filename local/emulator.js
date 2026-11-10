@@ -1,4 +1,4 @@
-// Local mode: answers the small part of Supabase's web API that PolySpot uses, backed by the real
+// Local mode: answers the small part of Supabase's web API that CampusSpot uses, backed by the real
 // database SQL running in PGlite. The browser app talks to it with the normal Supabase library, so
 // local mode and the live site run the same code. Sign-in is a simple "type an email" form (no Google).
 //
@@ -74,7 +74,7 @@ export function createEmulator({ db, dataDir }) {
   }
 
   const userIdFor = email => {
-    const h = crypto.createHash('sha256').update(`polyspot-local:${email}`).digest('hex');
+    const h = crypto.createHash('sha256').update(`campusspot-local:${email}`).digest('hex');
     return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-8${h.slice(17, 20)}-${h.slice(20, 32)}`;
   };
 

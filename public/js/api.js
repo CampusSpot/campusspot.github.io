@@ -1,19 +1,27 @@
 // Every call the app makes to the database, by name. Permissions are enforced by the database
 // functions themselves (see supabase/schema.sql), not here.
 import { rpc } from './backend.js';
+import { currentCampus } from './session.js';
 
-let mapsCache = null;
+// Calls about "the campus" default to the one you're playing; admin pages pass the one they manage.
+const cid = () => currentCampus()?.id ?? null;
+const mapsCache = new Map();
 
 export const api = {
-  maps: async () => (mapsCache ??= await rpc('get_maps')),
-  forgetMaps: () => { mapsCache = null; },
-  today: () => rpc('get_today'),
-  rounds: (includeScheduled = false) => rpc('list_rounds', { p_include_scheduled: includeScheduled }),
+  maps: async (campus = cid()) => {
+    if (!mapsCache.has(campus)) mapsCache.set(campus, await rpc('get_maps', { p_campus: campus }));
+    return mapsCache.get(campus);
+  },
+  forgetMaps: () => mapsCache.clear(),
+  today: (campus = cid()) => rpc('get_today', { p_campus: campus }),
+  rounds: (includeScheduled = false, campus = cid()) => rpc('list_rounds', { p_campus: campus, p_include_scheduled: includeScheduled }),
   round: id => rpc('get_round', { p_id: id }),
   guess: (id, pose) => rpc('submit_guess', { p_round: id, p_pos: pose.pos, p_heading: pose.heading }),
   myResult: id => rpc('get_my_result', { p_round: id }),
-  leaderboardRound: (id = null) => rpc('leaderboard_round', { p_round: id }),
-  leaderboardOverall: (days = null) => rpc('leaderboard_overall', { p_days: days }),
+  leaderboardRound: (id = null, campus = cid()) => rpc('leaderboard_round', { p_round: id, p_campus: campus }),
+  leaderboardOverall: (days = null, campus = cid()) => rpc('leaderboard_overall', { p_campus: campus, p_days: days }),
+  joinCampus: id => rpc('join_campus', { p_campus: id }),
+  setGradYear: year => rpc('set_grad_year', { p_year: year }),
   setName: name => rpc('set_display_name', { p_name: name }),
   deleteAccount: () => rpc('delete_my_account'),
   requestContributor: note => rpc('request_contributor', { p_note: note }),
@@ -21,7 +29,7 @@ export const api = {
   mySubmissions: () => rpc('my_submissions'),
 
   admin: {
-    saveMap: async map => { const saved = await rpc('admin_save_map', { p_map: map }); mapsCache = null; return saved; },
+    saveMap: async map => { const saved = await rpc('admin_save_map', { p_map: map }); mapsCache.clear(); return saved; },
     createRound: round => rpc('admin_create_round', { p: round }),
     updateRound: (id, patch) => rpc('admin_update_round', { p_id: id, p: patch }),
     deleteRound: id => rpc('admin_delete_round', { p_id: id }),

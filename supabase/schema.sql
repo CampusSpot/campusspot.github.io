@@ -1,5 +1,8 @@
 -- ═════════════════════════════════════════════════════════════════════════════════════════════════
--- PolySpot database (Postgres, made for Supabase).
+-- CampusSpot database (Postgres, made for Supabase).
+--
+-- Every round belongs to a campus (through its map). Each campus has its own daily round, schedule
+-- and leaderboards; a player belongs to one campus at a time (memberships) and can switch.
 --
 -- Security model: every table has row-level security ON and NO policies, so the public API can't
 -- read or change any table directly. Everything goes through the functions below. Each one checks
@@ -21,6 +24,18 @@ create table if not exists public.settings (
 -- Google accounts allowed to host rounds, edit maps and moderate names (keep this to 1–2 people).
 create table if not exists public.admins (
   email text primary key check (email = lower(email))
+);
+
+-- Colleges players can pick. Filled from public/data/campuses.json by the setup script.
+create table if not exists public.campuses (
+  id         text primary key check (id ~ '^[a-z0-9-]{1,40}$'),
+  name       text not null,
+  short_name text not null,
+  kind       text not null,                -- uc | csu | private | cc
+  city       text not null default '',
+  lat        double precision not null,
+  lng        double precision not null,
+  size       double precision not null default 0.006   -- half the default play area, in degrees latitude
 );
 
 create table if not exists public.maps (
@@ -50,6 +65,11 @@ do $$ begin
   alter table public.rounds add constraint rounds_published_have_date check (status <> 'published' or release_date is not null);
 exception when duplicate_object then null; end $$;
 create index if not exists rounds_release_date on public.rounds (release_date desc);
+-- Each map (and so each round) belongs to one campus. Older single-campus maps are assigned to
+-- Cal Poly Pomona by the setup script.
+alter table public.maps add column if not exists campus_id text references public.campuses(id);
+create index if not exists maps_campus on public.maps (campus_id);
+create index if not exists rounds_map on public.rounds (map_id);
 
 -- Players who asked to submit photos. An admin approves or denies each request; approved
 -- contributors' photos still go through review before they're scheduled.
@@ -76,6 +96,15 @@ create table if not exists public.profiles (
   updated_at   timestamptz not null default now()
 );
 create unique index if not exists profiles_display_name_unique on public.profiles (lower(display_name));
+alter table public.profiles add column if not exists grad_year integer check (grad_year between 1950 and 2100);
+
+-- The one campus a player belongs to. Their scores count on that campus's leaderboards only.
+create table if not exists public.memberships (
+  user_id   uuid primary key references auth.users(id) on delete cascade,
+  campus_id text not null references public.campuses(id),
+  joined_at timestamptz not null default now()
+);
+create index if not exists memberships_campus on public.memberships (campus_id);
 
 create table if not exists public.guesses (
   id               uuid primary key default gen_random_uuid(),
@@ -98,6 +127,8 @@ create index if not exists guesses_user on public.guesses (user_id);
 -- At most one leaderboard entry per player per round.
 create unique index if not exists guesses_one_ranked on public.guesses (round_id, user_id) where ranked;
 
+alter table public.campuses      enable row level security;
+alter table public.memberships   enable row level security;
 alter table public.settings      enable row level security;
 alter table public.admins        enable row level security;
 alter table public.maps          enable row level security;
@@ -150,11 +181,45 @@ language sql stable security definer set search_path = public as $$
   select public.is_admin() or public.is_contributor()
 $$;
 
--- The first day from today on that has no published round: where an approved submission goes.
-create or replace function public.next_free_date() returns date
+-- Functions whose arguments changed when campuses were added (dropped so no old versions linger).
+drop function if exists public.next_free_date();
+drop function if exists public.get_maps();
+drop function if exists public.get_today();
+drop function if exists public.list_rounds(boolean);
+drop function if exists public.leaderboard_round(uuid);
+drop function if exists public.leaderboard_overall(integer);
+
+create or replace function public.round_campus(r public.rounds) returns text
+language sql stable security definer set search_path = public as $$
+  select campus_id from maps where id = r.map_id
+$$;
+
+-- Is this player a member of that campus right now? (Only members show on its leaderboards.)
+create or replace function public.is_member(p_user uuid, p_campus text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from memberships where user_id = p_user and campus_id = p_campus)
+$$;
+
+create or replace function public.my_campus() returns text
+language sql stable security definer set search_path = public as $$
+  select campus_id from memberships where user_id = auth.uid()
+$$;
+
+create or replace function public.assert_campus(p_campus text) returns text
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if p_campus is null or not exists (select 1 from campuses where id = p_campus) then
+    raise exception 'Pick a campus' using errcode = '22023', hint = 'needs_campus';
+  end if;
+  return p_campus;
+end $$;
+
+-- The first day from today on that has no published round at that campus.
+create or replace function public.next_free_date(p_campus text) returns date
 language sql stable security definer set search_path = public as $$
   select min(d)::date from generate_series(public.today_local(), public.today_local() + 3650, interval '1 day') d
-  where not exists (select 1 from rounds where status = 'published' and release_date = d::date)
+  where not exists (select 1 from rounds r join maps m on m.id = r.map_id
+                    where m.campus_id = p_campus and r.status = 'published' and r.release_date = d::date)
 $$;
 
 create or replace function public.assert_signed_in() returns uuid
@@ -236,7 +301,7 @@ end $$;
 create or replace function public.round_json(r public.rounds) returns jsonb
 language sql stable security definer set search_path = public as $$
   select jsonb_build_object(
-    'id', r.id, 'mapId', r.map_id, 'title', r.title, 'difficulty', r.difficulty, 'status', r.status,
+    'id', r.id, 'mapId', r.map_id, 'campusId', public.round_campus(r), 'title', r.title, 'difficulty', r.difficulty, 'status', r.status,
     'date', to_char(r.release_date, 'YYYY-MM-DD'), 'photoPath', r.photo_path, 'createdAt', r.created_at,
     'plays', (select count(*) from guesses g where g.round_id = r.id and g.ranked),
     'mine', (select jsonb_build_object('played', true, 'best', max(g.total))
@@ -253,7 +318,12 @@ $$;
 
 create or replace function public.map_json(p_id text) returns jsonb
 language sql stable security definer set search_path = public as $$
-  select data || jsonb_build_object('id', id) from maps where id = p_id
+  select data || jsonb_build_object('id', id, 'campusId', campus_id) from maps where id = p_id
+$$;
+
+create or replace function public.campus_json(c public.campuses) returns jsonb
+language sql stable as $$
+  select jsonb_build_object('id', c.id, 'name', c.name, 'short', c.short_name, 'kind', c.kind, 'city', c.city, 'lat', c.lat, 'lng', c.lng)
 $$;
 
 -- A round is visible once it's published and its day has arrived. Admins see every round, and
@@ -284,8 +354,9 @@ language sql stable security definer set search_path = public as $$
                'place', 1 + count(*) filter (where g.total > mine.total),
                'of', count(*))
              from guesses g,
-                  (select total from guesses where round_id = r.id and user_id = auth.uid() and ranked) mine
-             where g.round_id = r.id and g.ranked
+                  (select total from guesses where round_id = r.id and user_id = auth.uid() and ranked
+                   and public.is_member(auth.uid(), public.round_campus(r))) mine
+             where g.round_id = r.id and g.ranked and public.is_member(g.user_id, public.round_campus(r))
              having count(*) > 0))
 $$;
 
@@ -299,28 +370,49 @@ language sql stable security definer set search_path = public as $$
     'scoring', (select value from settings where key = 'scoring'),
     'signedIn', auth.uid() is not null,
     'isAdmin', public.is_admin(),
-    'profile', (select jsonb_build_object('displayName', display_name, 'hidden', hidden) from profiles where user_id = auth.uid()),
+    'profile', (select jsonb_build_object('displayName', display_name, 'hidden', hidden, 'gradYear', grad_year) from profiles where user_id = auth.uid()),
+    'campus', (select public.campus_json(c) from memberships mm join campuses c on c.id = mm.campus_id where mm.user_id = auth.uid()),
     'contributor', (select status from contributors where user_id = auth.uid()))
 $$;
 
-create or replace function public.get_maps() returns jsonb
+-- A campus's maps. Every campus starts with one: a box around its center that admins can adjust.
+create or replace function public.get_maps(p_campus text) returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare c campuses;
+begin
+  select * into c from campuses where id = public.assert_campus(p_campus);
+  if not exists (select 1 from maps where campus_id = c.id) then
+    insert into maps (id, campus_id, data) values (
+      case when exists (select 1 from maps where id = c.id) then substr(md5(gen_random_uuid()::text), 1, 10) else c.id end,
+      c.id,
+      jsonb_build_object('type', 'latlng', 'name', c.name, 'units', 'ft', 'features', '[]'::jsonb, 'bounds', jsonb_build_object(
+        'sw', jsonb_build_object('lat', c.lat - c.size, 'lng', c.lng - c.size / cos(radians(c.lat))),
+        'ne', jsonb_build_object('lat', c.lat + c.size, 'lng', c.lng + c.size / cos(radians(c.lat))))));
+  end if;
+  return (select coalesce(jsonb_agg(data || jsonb_build_object('id', id, 'campusId', campus_id) order by updated_at), '[]'::jsonb)
+          from maps where campus_id = c.id);
+end $$;
+
+create or replace function public.get_campuses() returns jsonb
 language sql stable security definer set search_path = public as $$
-  select coalesce(jsonb_agg(data || jsonb_build_object('id', id) order by (data->>'type') = 'latlng' desc, id), '[]'::jsonb) from maps
+  select coalesce(jsonb_agg(public.campus_json(c) order by c.name), '[]'::jsonb) from campuses c
 $$;
 
-create or replace function public.get_today() returns jsonb
+-- Today's round at a campus.
+create or replace function public.get_today(p_campus text) returns jsonb
 language sql stable security definer set search_path = public as $$
-  select public.round_json(r) from rounds r
-  where r.status = 'published' and r.release_date = public.today_local()
+  select public.round_json(r) from rounds r join maps m on m.id = r.map_id
+  where m.campus_id = p_campus and r.status = 'published' and r.release_date = public.today_local()
   order by r.created_at desc limit 1
 $$;
 
--- Released rounds, newest first (admins: pass true to include scheduled ones).
-create or replace function public.list_rounds(p_include_scheduled boolean default false) returns jsonb
+-- A campus's released rounds, newest first (admins: pass true to include scheduled ones).
+create or replace function public.list_rounds(p_campus text, p_include_scheduled boolean default false) returns jsonb
 language sql stable security definer set search_path = public as $$
   select coalesce(jsonb_agg(public.round_json(r) order by r.release_date desc, r.created_at desc), '[]'::jsonb)
-  from rounds r
-  where r.status = 'published' and (r.release_date <= public.today_local() or (p_include_scheduled and public.is_admin()))
+  from rounds r join maps m on m.id = r.map_id
+  where m.campus_id = p_campus and r.status = 'published'
+    and (r.release_date <= public.today_local() or (p_include_scheduled and public.is_admin()))
 $$;
 
 create or replace function public.get_round(p_id uuid) returns jsonb
@@ -331,8 +423,9 @@ begin
                             'isToday', r.status = 'published' and r.release_date = public.today_local());
 end $$;
 
--- Score a guess. Today's round, signed in: one attempt, goes on the leaderboard (except for the admin
--- who made it). Guests (any round) and older rounds: scored but not ranked; guests' guesses aren't stored.
+-- Score a guess. Today's round, signed in: one attempt. It's ranked when the player is a member of the
+-- round's campus (and didn't make the round). Guests (any round) and older rounds: scored but not
+-- ranked; guests' guesses aren't stored.
 create or replace function public.submit_guess(p_round uuid, p_pos jsonb, p_heading double precision) returns jsonb
 language plpgsql volatile security definer set search_path = public as $$
 declare
@@ -362,7 +455,7 @@ begin
       return public.result_json(r, (select jsonb_agg(public.guess_json(x) order by x.created_at) from guesses x
                                     where x.round_id = r.id and x.user_id = uid), true);
     end if;
-    is_ranked := r.created_by is distinct from uid;
+    is_ranked := r.created_by is distinct from uid and public.is_member(uid, public.round_campus(r));
   end if;
 
   s := public.score_guess(m, r.difficulty, a.pos, a.heading, pos, heading, public.setting('scoring'));
@@ -400,44 +493,47 @@ begin
   return public.result_json(r, mine, false);
 end $$;
 
--- Leaderboard for one round (default: today's).
-create or replace function public.leaderboard_round(p_round uuid default null) returns jsonb
+-- Leaderboard for one round (default: today's at p_campus). Only the campus's current members count.
+create or replace function public.leaderboard_round(p_round uuid default null, p_campus text default null) returns jsonb
 language plpgsql stable security definer set search_path = public as $$
 declare
   rid uuid := p_round;
   r rounds;
 begin
   if rid is null then
-    select id into rid from rounds where status = 'published' and release_date = public.today_local() order by created_at desc limit 1;
+    rid := (public.get_today(p_campus))->>'id';
     if rid is null then return jsonb_build_object('round', null, 'rows', '[]'::jsonb); end if;
   end if;
   r := public.visible_round(rid);
   return jsonb_build_object('round', public.round_json(r), 'rows', coalesce((
-    select jsonb_agg(jsonb_build_object('place', t.place, 'name', t.name, 'total', t.total, 'distance', t.distance,
+    select jsonb_agg(jsonb_build_object('place', t.place, 'name', t.name, 'gradYear', t.grad_year, 'total', t.total, 'distance', t.distance,
                                         'angleError', t.angle_error, 'me', t.me) order by t.place, t.created_at)
     from (
-      select rank() over (order by g.total desc) as place, p.display_name as name, g.total, g.distance, g.angle_error,
+      select rank() over (order by g.total desc) as place, p.display_name as name, p.grad_year, g.total, g.distance, g.angle_error,
              g.user_id = auth.uid() as me, g.created_at
       from guesses g join profiles p on p.user_id = g.user_id
+      join memberships mm on mm.user_id = g.user_id and mm.campus_id = public.round_campus(r)
       where g.round_id = r.id and g.ranked and not p.hidden
       order by g.total desc, g.created_at
       limit 100) t), '[]'::jsonb));
 end $$;
 
--- Overall leaderboard: total points over ranked rounds, all time or the last p_days days.
-create or replace function public.leaderboard_overall(p_days integer default null) returns jsonb
+-- A campus's overall leaderboard: its current members' points on its rounds, all time or the last p_days days.
+create or replace function public.leaderboard_overall(p_campus text, p_days integer default null) returns jsonb
 language sql stable security definer set search_path = public as $$
-  select coalesce(jsonb_agg(jsonb_build_object('place', t.place, 'name', t.name, 'total', t.total, 'rounds', t.rounds,
+  select coalesce(jsonb_agg(jsonb_build_object('place', t.place, 'name', t.name, 'gradYear', t.grad_year, 'total', t.total, 'rounds', t.rounds,
                                                'average', t.average, 'me', t.me) order by t.place, t.name), '[]'::jsonb)
   from (
-    select rank() over (order by sum(g.total) desc) as place, p.display_name as name, sum(g.total)::int as total,
+    select rank() over (order by sum(g.total) desc) as place, p.display_name as name, p.grad_year, sum(g.total)::int as total,
            count(*)::int as rounds, round(avg(g.total))::int as average, bool_or(g.user_id = auth.uid()) as me
     from guesses g
     join profiles p on p.user_id = g.user_id
     join rounds r on r.id = g.round_id
+    join maps m on m.id = r.map_id and m.campus_id = p_campus
+    join memberships mm on mm.user_id = g.user_id and mm.campus_id = p_campus
     where g.ranked and not p.hidden
       and (p_days is null or r.release_date > public.today_local() - p_days)
-    group by g.user_id, p.display_name
+    group by g.user_id, p.display_name, p.grad_year
     order by sum(g.total) desc
     limit 100) t
 $$;
@@ -469,6 +565,31 @@ begin
     raise exception 'That name is taken' using errcode = '23505';
   end;
   return jsonb_build_object('displayName', clean, 'hidden', false);
+end $$;
+
+-- Join a campus (or switch to another). Your scores count on your current campus's leaderboards only;
+-- switching back later brings your scores there back.
+create or replace function public.join_campus(p_campus text) returns jsonb
+language plpgsql volatile security definer set search_path = public as $$
+declare uid uuid := public.assert_signed_in();
+begin
+  perform public.assert_campus(p_campus);
+  insert into memberships (user_id, campus_id) values (uid, p_campus)
+  on conflict (user_id) do update set campus_id = excluded.campus_id,
+    joined_at = case when memberships.campus_id = excluded.campus_id then memberships.joined_at else now() end;
+  return (select public.campus_json(c) from campuses c where id = p_campus);
+end $$;
+
+-- Optional class year shown next to your name. null clears it.
+create or replace function public.set_grad_year(p_year integer) returns void
+language plpgsql volatile security definer set search_path = public as $$
+declare uid uuid := public.assert_signed_in();
+begin
+  if p_year is not null and (p_year < 1950 or p_year > extract(year from now())::int + 10) then
+    raise exception 'Pick a real graduation year' using errcode = '22023';
+  end if;
+  update profiles set grad_year = p_year, updated_at = now() where user_id = uid;
+  if not found then raise exception 'Choose a leaderboard name first' using errcode = 'P0001', hint = 'needs_name'; end if;
 end $$;
 
 -- Delete your account and everything linked to it (name, guesses).
@@ -519,7 +640,10 @@ begin
   where public.valid_pos(m, f->'pos');
   m := m || jsonb_build_object('features', feats);
 
-  insert into maps (id, data) values (map_id, m)
+  if not exists (select 1 from maps where id = map_id) then
+    perform public.assert_campus(p_map->>'campusId');
+  end if;
+  insert into maps (id, data, campus_id) values (map_id, m, p_map->>'campusId')
   on conflict (id) do update set data = excluded.data, updated_at = now();
   return public.map_json(map_id);
 end $$;
@@ -527,7 +651,7 @@ end $$;
 -- Checks a new round (photo, spot, direction, difficulty) and returns its map, or raises.
 create or replace function public.check_round_input(p jsonb) returns jsonb
 language plpgsql stable security definer set search_path = public as $$
-declare m jsonb := public.map_json(coalesce(p->>'mapId', 'campus'));
+declare m jsonb := public.map_json(p->>'mapId');
 begin
   if m is null then raise exception 'Pick a map' using errcode = '22023'; end if;
   if not public.valid_pos(m, p#>'{truth,pos}') then raise exception 'Set where the photo was taken' using errcode = '22023'; end if;
@@ -605,6 +729,7 @@ begin
   perform public.assert_admin();
   return coalesce((
     select jsonb_agg(jsonb_build_object('userId', p.user_id, 'name', p.display_name, 'hidden', p.hidden, 'createdAt', p.created_at,
+                                        'campus', (select c.short_name from memberships mm join campuses c on c.id = mm.campus_id where mm.user_id = p.user_id),
                                         'plays', coalesce(s.plays, 0), 'total', coalesce(s.total, 0)) order by p.created_at desc)
     from profiles p
     left join (select user_id, count(*) filter (where ranked) as plays, sum(total) filter (where ranked) as total
@@ -636,6 +761,7 @@ begin
   if not exists (select 1 from profiles where user_id = uid) then
     raise exception 'Choose a leaderboard name first' using errcode = 'P0001', hint = 'needs_name';
   end if;
+  if public.my_campus() is null then raise exception 'Join a campus first' using errcode = 'P0001', hint = 'needs_campus'; end if;
   insert into contributors (user_id, note) values (uid, left(trim(coalesce(p_note, '')), 300))
   on conflict (user_id) do update
     set status = case when contributors.status = 'approved' then 'approved' else 'pending' end,
@@ -654,6 +780,9 @@ begin
     raise exception 'You have 10 photos waiting for review; please wait for those first' using errcode = 'P0001';
   end if;
   m := public.check_round_input(p);
+  if not public.is_admin() and m->>'campusId' is distinct from public.my_campus() then
+    raise exception 'You can only submit photos of your own campus' using errcode = '42501';
+  end if;
   return public.round_json(public.insert_round(p, m, 'pending', null));
 end $$;
 
@@ -672,8 +801,9 @@ begin
   perform public.assert_admin();
   return coalesce((
     select jsonb_agg(public.round_json(r) || jsonb_build_object(
-             'submittedBy', coalesce(p.display_name, '(no name)'), 'submitterEmail', u.email) order by r.created_at)
+             'submittedBy', coalesce(p.display_name, '(no name)'), 'submitterEmail', u.email, 'campus', c.short_name) order by r.created_at)
     from rounds r left join profiles p on p.user_id = r.created_by left join auth.users u on u.id = r.created_by
+    left join maps m on m.id = r.map_id left join campuses c on c.id = m.campus_id
     where r.status in ('pending', 'stored')), '[]'::jsonb);
 end $$;
 
@@ -684,7 +814,8 @@ declare r rounds;
 begin
   perform public.assert_admin();
   if p_date < public.today_local() then raise exception 'Pick today or a later day' using errcode = '22023'; end if;
-  update rounds set status = 'published', release_date = coalesce(p_date, public.next_free_date()), review_note = null
+  update rounds set status = 'published', review_note = null,
+    release_date = coalesce(p_date, public.next_free_date(public.round_campus(rounds)))
   where id = p_id and status in ('pending', 'stored') returning * into r;
   if not found then raise exception 'That submission is no longer waiting for review' using errcode = 'P0002'; end if;
   return public.round_json(r);
@@ -720,6 +851,7 @@ begin
   perform public.assert_admin();
   return coalesce((
     select jsonb_agg(jsonb_build_object('userId', c.user_id, 'name', coalesce(p.display_name, '(no name)'), 'email', u.email,
+                                        'campus', (select x.short_name from memberships mm join campuses x on x.id = mm.campus_id where mm.user_id = c.user_id),
                                         'status', c.status, 'note', c.note, 'requestedAt', c.created_at,
                                         'submitted', (select count(*) from rounds r where r.created_by = c.user_id),
                                         'published', (select count(*) from rounds r where r.created_by = c.user_id and r.status = 'published'))
@@ -742,13 +874,13 @@ revoke all on all tables in schema public from anon, authenticated;
 revoke execute on all functions in schema public from public, anon, authenticated;
 
 grant execute on function
-  public.is_admin(), public.can_upload(), public.get_bootstrap(), public.get_maps(), public.get_today(), public.list_rounds(boolean),
-  public.get_round(uuid), public.submit_guess(uuid, jsonb, double precision), public.get_my_result(uuid),
-  public.leaderboard_round(uuid), public.leaderboard_overall(integer)
+  public.is_admin(), public.can_upload(), public.get_bootstrap(), public.get_campuses(), public.get_maps(text), public.get_today(text),
+  public.list_rounds(text, boolean), public.get_round(uuid), public.submit_guess(uuid, jsonb, double precision), public.get_my_result(uuid),
+  public.leaderboard_round(uuid, text), public.leaderboard_overall(text, integer)
   to anon, authenticated;
 
 grant execute on function
-  public.set_display_name(text), public.delete_my_account(),
+  public.set_display_name(text), public.delete_my_account(), public.join_campus(text), public.set_grad_year(integer),
   public.admin_save_map(jsonb), public.admin_create_round(jsonb), public.admin_update_round(uuid, jsonb),
   public.admin_delete_round(uuid), public.admin_round_answer(uuid), public.admin_players(),
   public.admin_set_hidden(uuid, boolean), public.admin_list_admins(),

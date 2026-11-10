@@ -5,11 +5,12 @@ import { difficultyPicker, pageHeader, roundSummary } from '../../components.js'
 import { createMapView } from '../../map/index.js';
 import { session } from '../../session.js';
 import { btn, confirmDialog, formatDate, h, modal, toast } from '../../ui.js';
-import { addDays, adminNav } from './common.js';
+import { addDays, adminCampus, adminNav } from './common.js';
 
 export async function adminRounds(root) {
   const today = session.boot.today;
-  const [rounds, maps] = await Promise.all([api.rounds(true), api.maps()]);
+  const campus = adminCampus();
+  const [rounds, maps] = await Promise.all([api.rounds(true, campus.id), api.maps(campus.id)]);
   const byDate = new Map();
   for (const r of rounds) if (!byDate.has(r.date)) byDate.set(r.date, r);
 
@@ -83,7 +84,7 @@ export async function adminRounds(root) {
 
   root.append(
     adminNav(),
-    pageHeader('Rounds', { sub: 'One photo per day. Rounds go live at midnight campus time.', actions: btn('New', { href: '#/admin/new', icon: 'plus', class: 'primary small' }) }),
+    pageHeader(`${campus.short} rounds`, { sub: 'One photo per day at each campus. Rounds go live at midnight.', actions: btn('New', { href: '#/admin/new', icon: 'plus', class: 'primary small' }) }),
     h('section', { class: 'card' },
       h('div', { class: 'row between' }, h('h2', {}, 'Next 14 days'), h('span', { class: `small ${gaps ? 'warn' : 'muted'}` }, gaps ? `${gaps} day${gaps === 1 ? '' : 's'} without a round` : 'All filled')),
       week),

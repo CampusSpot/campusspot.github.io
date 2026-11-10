@@ -8,7 +8,7 @@ const read = f => fs.readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
 
 test('the Supabase setup script builds from its parts', () => {
   const sql = setupSql();
-  for (const part of ['create table if not exists public.rounds', 'polyspot: admins upload photos', "insert into public.settings (key, value) values ('scoring'"]) {
+  for (const part of ['create table if not exists public.rounds', 'campusspot: admins upload photos', "insert into public.settings (key, value) values ('scoring'"]) {
     assert.ok(sql.includes(part), part);
   }
 });
@@ -20,7 +20,7 @@ test('no real admin email or secret key is committed', () => {
     const claims = JSON.parse(Buffer.from(jwt.split('.')[1], 'base64url').toString());
     assert.notEqual(claims.role, 'service_role', 'the service_role key must never be in the site');
   }
-  assert.match(setupSql(), /set_config\('polyspot\.admin_emails', 'your\.email@gmail\.com'/);
+  assert.match(setupSql(), /set_config\('campusspot\.admin_emails', 'your\.email@gmail\.com'/);
 });
 
 test('the bundled Supabase library matches the installed version', () => {

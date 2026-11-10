@@ -14,7 +14,7 @@ export async function adminContributors(root) {
     list.replaceChildren(...people.map(p => h('li', {},
       h('div', { class: 'grow' },
         h('strong', {}, p.name), h('span', { class: `status ${p.status === 'approved' ? 'ok' : p.status === 'denied' ? 'no' : ''}` }, LABEL[p.status]),
-        h('div', { class: 'small muted' }, `${p.email || ''} · asked ${formatTime(p.requestedAt)} · ${p.published}/${p.submitted} photos approved`),
+        h('div', { class: 'small muted' }, `${p.campus ? `${p.campus} · ` : ''}${p.email || ''} · asked ${formatTime(p.requestedAt)} · ${p.published}/${p.submitted} photos approved`),
         p.note ? h('div', { class: 'small' }, `“${p.note}”`) : null),
       h('div', { class: 'row' },
         p.status !== 'approved' ? btn('Approve', { class: 'small primary', onclick: () => set(p, 'approved') }) : null,

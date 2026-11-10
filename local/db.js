@@ -1,4 +1,4 @@
-// The real PolySpot database (supabase/schema.sql) running in-process with PGlite (Postgres compiled
+// The real CampusSpot database (supabase/schema.sql) running in-process with PGlite (Postgres compiled
 // to WebAssembly). Used by local mode and the tests, so they exercise the exact SQL that runs on Supabase.
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -25,7 +25,7 @@ export async function openDb({ dataDir, adminEmails = [] } = {}) {
   const db = dataDir ? new PGlite(dataDir) : new PGlite();
   await db.exec(read('local-auth.sql'));
   await db.exec(read('schema.sql'));
-  await db.query(`select set_config('polyspot.admin_emails', $1, false)`, [adminEmails.join(',')]);
+  await db.query(`select set_config('campusspot.admin_emails', $1, false)`, [adminEmails.join(',')]);
   await db.exec(seedSql({ adminProviders: ['google', 'dev'] }));
 
   /**

@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 The PolySpot authors
+Copyright (c) 2026 The CampusSpot authors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,6 +20,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-This license covers PolySpot's own code and the sample photo in seed/photos/ (an
+This license covers CampusSpot's own code and the sample photo in seed/photos/ (an
 original computer rendering). Third-party code, map imagery and map data are covered
 by their own licenses and terms: see THIRD_PARTY_NOTICES.md.
