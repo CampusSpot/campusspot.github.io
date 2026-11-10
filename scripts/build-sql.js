@@ -31,6 +31,10 @@ insert into public.maps (id, data, campus_id) values ('campus', ${json(campus)},
   on conflict (id) do nothing;
 -- Before campuses existed every map was Cal Poly Pomona's.
 update public.maps set campus_id = 'cal-poly-pomona' where campus_id is null;
+-- First upgrade only: everyone who already played was a Cal Poly Pomona player.
+insert into public.memberships (user_id, campus_id)
+  select user_id, 'cal-poly-pomona' from public.profiles where not exists (select 1 from public.memberships)
+  on conflict do nothing;
 -- Admins from the line at the top of setup.sql (skipped while it still says your.email@gmail.com).
 insert into public.admins (email)
   select lower(trim(e)) from unnest(string_to_array(coalesce(current_setting('campusspot.admin_emails', true), ''), ',')) as e
