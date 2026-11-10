@@ -1,0 +1,1962 @@
+[
+{
+"id": "uc-berkeley",
+"name": "UC Berkeley",
+"short": "Berkeley",
+"kind": "uc",
+"city": "Berkeley",
+"lat": 37.871519,
+"lng": -122.260401,
+"size": 0.01
+},
+{
+"id": "uc-davis",
+"name": "UC Davis",
+"short": "UC Davis",
+"kind": "uc",
+"city": "Davis",
+"lat": 38.539895,
+"lng": -121.751958,
+"size": 0.016
+},
+{
+"id": "uc-irvine",
+"name": "UC Irvine",
+"short": "UCI",
+"kind": "uc",
+"city": "Irvine",
+"lat": 33.648434,
+"lng": -117.841248,
+"size": 0.012
+},
+{
+"id": "uc-merced",
+"name": "UC Merced",
+"short": "UC Merced",
+"kind": "uc",
+"city": "Merced",
+"lat": 37.366237,
+"lng": -120.424944,
+"size": 0.01
+},
+{
+"id": "uc-riverside",
+"name": "UC Riverside",
+"short": "UCR",
+"kind": "uc",
+"city": "Riverside",
+"lat": 33.97588,
+"lng": -117.331098,
+"size": 0.01
+},
+{
+"id": "uc-san-diego",
+"name": "UC San Diego",
+"short": "UCSD",
+"kind": "uc",
+"city": "La Jolla",
+"lat": 32.876598,
+"lng": -117.237793,
+"size": 0.014
+},
+{
+"id": "uc-san-francisco",
+"name": "UC San Francisco",
+"short": "UCSF",
+"kind": "uc",
+"city": "San Francisco",
+"lat": 37.762736,
+"lng": -122.458049,
+"size": 0.006
+},
+{
+"id": "uc-santa-barbara",
+"name": "UC Santa Barbara",
+"short": "UCSB",
+"kind": "uc",
+"city": "Santa Barbara",
+"lat": 34.415402,
+"lng": -119.848031,
+"size": 0.01
+},
+{
+"id": "uc-santa-cruz",
+"name": "UC Santa Cruz",
+"short": "UCSC",
+"kind": "uc",
+"city": "Santa Cruz",
+"lat": 36.997258,
+"lng": -122.067993,
+"size": 0.014
+},
+{
+"id": "ucla",
+"name": "UCLA",
+"short": "UCLA",
+"kind": "uc",
+"city": "Los Angeles",
+"lat": 34.068892,
+"lng": -118.443901,
+"size": 0.01
+},
+{
+"id": "csu-bakersfield",
+"name": "CSU Bakersfield",
+"short": "CSUB",
+"kind": "csu",
+"city": "Bakersfield",
+"lat": 35.350005,
+"lng": -119.104711,
+"size": 0.01
+},
+{
+"id": "csu-channel-islands",
+"name": "CSU Channel Islands",
+"short": "CSUCI",
+"kind": "csu",
+"city": "Camarillo",
+"lat": 34.162949,
+"lng": -119.04356,
+"size": 0.01
+},
+{
+"id": "csu-dominguez-hills",
+"name": "CSU Dominguez Hills",
+"short": "CSUDH",
+"kind": "csu",
+"city": "Carson",
+"lat": 33.86524,
+"lng": -118.259316,
+"size": 0.01
+},
+{
+"id": "csu-monterey-bay",
+"name": "CSU Monterey Bay",
+"short": "CSUMB",
+"kind": "csu",
+"city": "Seaside",
+"lat": 36.653724,
+"lng": -121.799216,
+"size": 0.01
+},
+{
+"id": "csu-san-bernardino",
+"name": "CSU San Bernardino",
+"short": "CSUSB",
+"kind": "csu",
+"city": "San Bernardino",
+"lat": 34.182987,
+"lng": -117.322508,
+"size": 0.01
+},
+{
+"id": "csu-san-marcos",
+"name": "CSU San Marcos",
+"short": "CSUSM",
+"kind": "csu",
+"city": "San Marcos",
+"lat": 33.129115,
+"lng": -117.158013,
+"size": 0.01
+},
+{
+"id": "csun",
+"name": "CSUN",
+"short": "CSUN",
+"kind": "csu",
+"city": "Northridge",
+"lat": 34.23671,
+"lng": -118.526817,
+"size": 0.01
+},
+{
+"id": "cal-poly-humboldt",
+"name": "Cal Poly Humboldt",
+"short": "Cal Poly Humboldt",
+"kind": "csu",
+"city": "Arcata",
+"lat": 40.8741,
+"lng": -124.0814,
+"size": 0.01
+},
+{
+"id": "cal-maritime",
+"name": "Cal Poly Maritime Academy",
+"short": "Cal Maritime",
+"kind": "csu",
+"city": "Vallejo",
+"lat": 38.069061,
+"lng": -122.231551,
+"size": 0.01
+},
+{
+"id": "cal-poly-pomona",
+"name": "Cal Poly Pomona",
+"short": "CPP",
+"kind": "csu",
+"city": "Pomona",
+"lat": 34.054273,
+"lng": -117.819019,
+"size": 0.01
+},
+{
+"id": "cal-poly-slo",
+"name": "Cal Poly San Luis Obispo",
+"short": "Cal Poly SLO",
+"kind": "csu",
+"city": "San Luis Obispo",
+"lat": 35.29889,
+"lng": -120.65856,
+"size": 0.01
+},
+{
+"id": "cal-state-east-bay",
+"name": "Cal State East Bay",
+"short": "CSUEB",
+"kind": "csu",
+"city": "Hayward",
+"lat": 37.65707,
+"lng": -122.058073,
+"size": 0.01
+},
+{
+"id": "cal-state-fullerton",
+"name": "Cal State Fullerton",
+"short": "CSUF",
+"kind": "csu",
+"city": "Fullerton",
+"lat": 33.883627,
+"lng": -117.885349,
+"size": 0.01
+},
+{
+"id": "cal-state-la",
+"name": "Cal State LA",
+"short": "Cal State LA",
+"kind": "csu",
+"city": "Los Angeles",
+"lat": 34.066927,
+"lng": -118.168965,
+"size": 0.01
+},
+{
+"id": "cal-state-long-beach",
+"name": "Cal State Long Beach",
+"short": "CSULB",
+"kind": "csu",
+"city": "Long Beach",
+"lat": 33.782752,
+"lng": -118.1123,
+"size": 0.01
+},
+{
+"id": "chico-state",
+"name": "Chico State",
+"short": "Chico State",
+"kind": "csu",
+"city": "Chico",
+"lat": 39.728003,
+"lng": -121.846333,
+"size": 0.01
+},
+{
+"id": "fresno-state",
+"name": "Fresno State",
+"short": "Fresno State",
+"kind": "csu",
+"city": "Fresno",
+"lat": 36.814477,
+"lng": -119.748258,
+"size": 0.01
+},
+{
+"id": "sacramento-state",
+"name": "Sacramento State",
+"short": "Sac State",
+"kind": "csu",
+"city": "Sacramento",
+"lat": 38.55745,
+"lng": -121.42194,
+"size": 0.01
+},
+{
+"id": "sdsu",
+"name": "San Diego State",
+"short": "SDSU",
+"kind": "csu",
+"city": "San Diego",
+"lat": 32.77525,
+"lng": -117.071228,
+"size": 0.01
+},
+{
+"id": "sf-state",
+"name": "San Francisco State",
+"short": "SF State",
+"kind": "csu",
+"city": "San Francisco",
+"lat": 37.721345,
+"lng": -122.477905,
+"size": 0.01
+},
+{
+"id": "sjsu",
+"name": "San Jose State",
+"short": "SJSU",
+"kind": "csu",
+"city": "San Jose",
+"lat": 37.335201,
+"lng": -121.881214,
+"size": 0.01
+},
+{
+"id": "sonoma-state",
+"name": "Sonoma State",
+"short": "Sonoma State",
+"kind": "csu",
+"city": "Rohnert Park",
+"lat": 38.341023,
+"lng": -122.673261,
+"size": 0.01
+},
+{
+"id": "stanislaus-state",
+"name": "Stanislaus State",
+"short": "Stan State",
+"kind": "csu",
+"city": "Turlock",
+"lat": 37.52577,
+"lng": -120.852511,
+"size": 0.01
+},
+{
+"id": "artcenter",
+"name": "ArtCenter College of Design",
+"short": "ArtCenter",
+"kind": "private",
+"city": "Pasadena",
+"lat": 34.170844,
+"lng": -118.186901,
+"size": 0.006
+},
+{
+"id": "azusa-pacific-university",
+"name": "Azusa Pacific University",
+"short": "APU",
+"kind": "private",
+"city": "Azusa",
+"lat": 34.130865,
+"lng": -117.88795,
+"size": 0.006
+},
+{
+"id": "biola-university",
+"name": "Biola University",
+"short": "Biola",
+"kind": "private",
+"city": "La Mirada",
+"lat": 33.904823,
+"lng": -118.017342,
+"size": 0.006
+},
+{
+"id": "calarts",
+"name": "CalArts",
+"short": "CalArts",
+"kind": "private",
+"city": "Valencia",
+"lat": 34.393337,
+"lng": -118.567303,
+"size": 0.006
+},
+{
+"id": "california-baptist-university",
+"name": "California Baptist University",
+"short": "CBU",
+"kind": "private",
+"city": "Riverside",
+"lat": 33.928569,
+"lng": -117.42587,
+"size": 0.006
+},
+{
+"id": "california-college-of-the-arts",
+"name": "California College of the Arts",
+"short": "CCA",
+"kind": "private",
+"city": "San Francisco",
+"lat": 37.767266,
+"lng": -122.400263,
+"size": 0.004
+},
+{
+"id": "california-lutheran-university",
+"name": "California Lutheran University",
+"short": "Cal Lutheran",
+"kind": "private",
+"city": "Thousand Oaks",
+"lat": 34.225551,
+"lng": -118.879467,
+"size": 0.006
+},
+{
+"id": "caltech",
+"name": "Caltech",
+"short": "Caltech",
+"kind": "private",
+"city": "Pasadena",
+"lat": 34.139275,
+"lng": -118.12574,
+"size": 0.006
+},
+{
+"id": "chapman-university",
+"name": "Chapman University",
+"short": "Chapman",
+"kind": "private",
+"city": "Orange",
+"lat": 33.793678,
+"lng": -117.851481,
+"size": 0.006
+},
+{
+"id": "claremont-mckenna-college",
+"name": "Claremont McKenna College",
+"short": "CMC",
+"kind": "private",
+"city": "Claremont",
+"lat": 34.102323,
+"lng": -117.706593,
+"size": 0.006
+},
+{
+"id": "concordia-university-irvine",
+"name": "Concordia University Irvine",
+"short": "CUI",
+"kind": "private",
+"city": "Irvine",
+"lat": 33.6535,
+"lng": -117.81063,
+"size": 0.006
+},
+{
+"id": "dominican-university-of-california",
+"name": "Dominican University of California",
+"short": "Dominican",
+"kind": "private",
+"city": "San Rafael",
+"lat": 37.980014,
+"lng": -122.514654,
+"size": 0.006
+},
+{
+"id": "fresno-pacific-university",
+"name": "Fresno Pacific University",
+"short": "FPU",
+"kind": "private",
+"city": "Fresno",
+"lat": 36.725279,
+"lng": -119.731953,
+"size": 0.006
+},
+{
+"id": "harvey-mudd-college",
+"name": "Harvey Mudd College",
+"short": "Harvey Mudd",
+"kind": "private",
+"city": "Claremont",
+"lat": 34.106137,
+"lng": -117.710594,
+"size": 0.006
+},
+{
+"id": "hope-international-university",
+"name": "Hope International University",
+"short": "HIU",
+"kind": "private",
+"city": "Fullerton",
+"lat": 33.87616,
+"lng": -117.88573,
+"size": 0.006
+},
+{
+"id": "la-sierra-university",
+"name": "La Sierra University",
+"short": "La Sierra",
+"kind": "private",
+"city": "Riverside",
+"lat": 33.908834,
+"lng": -117.497071,
+"size": 0.006
+},
+{
+"id": "laguna-college-of-art-and-design",
+"name": "Laguna College of Art and Design",
+"short": "LCAD",
+"kind": "private",
+"city": "Laguna Beach",
+"lat": 33.561448,
+"lng": -117.772564,
+"size": 0.004
+},
+{
+"id": "loyola-marymount-university",
+"name": "Loyola Marymount University",
+"short": "LMU",
+"kind": "private",
+"city": "Los Angeles",
+"lat": 33.970633,
+"lng": -118.415655,
+"size": 0.006
+},
+{
+"id": "menlo-college",
+"name": "Menlo College",
+"short": "Menlo",
+"kind": "private",
+"city": "Atherton",
+"lat": 37.452906,
+"lng": -122.181444,
+"size": 0.006
+},
+{
+"id": "mount-saint-marys-university",
+"name": "Mount Saint Mary's University",
+"short": "MSMU",
+"kind": "private",
+"city": "Los Angeles",
+"lat": 34.082112,
+"lng": -118.480471,
+"size": 0.006
+},
+{
+"id": "occidental-college",
+"name": "Occidental College",
+"short": "Oxy",
+"kind": "private",
+"city": "Los Angeles",
+"lat": 34.126224,
+"lng": -118.210783,
+"size": 0.006
+},
+{
+"id": "otis-college-of-art-and-design",
+"name": "Otis College of Art and Design",
+"short": "Otis",
+"kind": "private",
+"city": "Los Angeles",
+"lat": 33.956607,
+"lng": -118.416615,
+"size": 0.004
+},
+{
+"id": "pacific-union-college",
+"name": "Pacific Union College",
+"short": "PUC",
+"kind": "private",
+"city": "Angwin",
+"lat": 38.57409,
+"lng": -122.449639,
+"size": 0.006
+},
+{
+"id": "pepperdine-university",
+"name": "Pepperdine University",
+"short": "Pepperdine",
+"kind": "private",
+"city": "Malibu",
+"lat": 34.041912,
+"lng": -118.707677,
+"size": 0.01
+},
+{
+"id": "pitzer-college",
+"name": "Pitzer College",
+"short": "Pitzer",
+"kind": "private",
+"city": "Claremont",
+"lat": 34.103408,
+"lng": -117.705939,
+"size": 0.006
+},
+{
+"id": "point-loma-nazarene-university",
+"name": "Point Loma Nazarene University",
+"short": "PLNU",
+"kind": "private",
+"city": "San Diego",
+"lat": 32.713295,
+"lng": -117.251204,
+"size": 0.006
+},
+{
+"id": "pomona-college",
+"name": "Pomona College",
+"short": "Pomona",
+"kind": "private",
+"city": "Claremont",
+"lat": 34.098298,
+"lng": -117.711944,
+"size": 0.006
+},
+{
+"id": "saint-marys-college-of-california",
+"name": "Saint Mary's College of California",
+"short": "Saint Mary's",
+"kind": "private",
+"city": "Moraga",
+"lat": 37.83997,
+"lng": -122.106795,
+"size": 0.006
+},
+{
+"id": "san-diego-christian-college",
+"name": "San Diego Christian College",
+"short": "SDCC",
+"kind": "private",
+"city": "El Cajon",
+"lat": 32.799999,
+"lng": -116.903073,
+"size": 0.006
+},
+{
+"id": "san-francisco-conservatory-of-music",
+"name": "San Francisco Conservatory of Music",
+"short": "SFCM",
+"kind": "private",
+"city": "San Francisco",
+"lat": 37.775322,
+"lng": -122.420143,
+"size": 0.004
+},
+{
+"id": "santa-clara-university",
+"name": "Santa Clara University",
+"short": "SCU",
+"kind": "private",
+"city": "Santa Clara",
+"lat": 37.352706,
+"lng": -121.938189,
+"size": 0.006
+},
+{
+"id": "scripps-college",
+"name": "Scripps College",
+"short": "Scripps",
+"kind": "private",
+"city": "Claremont",
+"lat": 34.103655,
+"lng": -117.711336,
+"size": 0.006
+},
+{
+"id": "simpson-university",
+"name": "Simpson University",
+"short": "Simpson",
+"kind": "private",
+"city": "Redding",
+"lat": 40.61331,
+"lng": -122.333048,
+"size": 0.006
+},
+{
+"id": "soka-university-of-america",
+"name": "Soka University of America",
+"short": "Soka",
+"kind": "private",
+"city": "Aliso Viejo",
+"lat": 33.549425,
+"lng": -117.734893,
+"size": 0.006
+},
+{
+"id": "stanford",
+"name": "Stanford University",
+"short": "Stanford",
+"kind": "private",
+"city": "Stanford",
+"lat": 37.431746,
+"lng": -122.182212,
+"size": 0.018
+},
+{
+"id": "the-masters-university",
+"name": "The Master's University",
+"short": "TMU",
+"kind": "private",
+"city": "Santa Clarita",
+"lat": 34.38214,
+"lng": -118.517422,
+"size": 0.006
+},
+{
+"id": "thomas-aquinas-college",
+"name": "Thomas Aquinas College",
+"short": "TAC",
+"kind": "private",
+"city": "Santa Paula",
+"lat": 34.429009,
+"lng": -119.087141,
+"size": 0.006
+},
+{
+"id": "university-of-la-verne",
+"name": "University of La Verne",
+"short": "La Verne",
+"kind": "private",
+"city": "La Verne",
+"lat": 34.10086,
+"lng": -117.772634,
+"size": 0.006
+},
+{
+"id": "university-of-redlands",
+"name": "University of Redlands",
+"short": "Redlands",
+"kind": "private",
+"city": "Redlands",
+"lat": 34.063571,
+"lng": -117.163847,
+"size": 0.006
+},
+{
+"id": "university-of-san-diego",
+"name": "University of San Diego",
+"short": "USD",
+"kind": "private",
+"city": "San Diego",
+"lat": 32.77142,
+"lng": -117.188721,
+"size": 0.006
+},
+{
+"id": "university-of-san-francisco",
+"name": "University of San Francisco",
+"short": "USF",
+"kind": "private",
+"city": "San Francisco",
+"lat": 37.775564,
+"lng": -122.450977,
+"size": 0.006
+},
+{
+"id": "usc",
+"name": "University of Southern California",
+"short": "USC",
+"kind": "private",
+"city": "Los Angeles",
+"lat": 34.021058,
+"lng": -118.283858,
+"size": 0.009
+},
+{
+"id": "university-of-the-pacific",
+"name": "University of the Pacific",
+"short": "Pacific",
+"kind": "private",
+"city": "Stockton",
+"lat": 37.980624,
+"lng": -121.307296,
+"size": 0.006
+},
+{
+"id": "vanguard-university",
+"name": "Vanguard University",
+"short": "Vanguard",
+"kind": "private",
+"city": "Costa Mesa",
+"lat": 33.662686,
+"lng": -117.900911,
+"size": 0.006
+},
+{
+"id": "westmont-college",
+"name": "Westmont College",
+"short": "Westmont",
+"kind": "private",
+"city": "Santa Barbara",
+"lat": 34.449265,
+"lng": -119.661932,
+"size": 0.006
+},
+{
+"id": "whittier-college",
+"name": "Whittier College",
+"short": "Whittier",
+"kind": "private",
+"city": "Whittier",
+"lat": 33.977625,
+"lng": -118.028402,
+"size": 0.006
+},
+{
+"id": "william-jessup-university",
+"name": "William Jessup University",
+"short": "Jessup",
+"kind": "private",
+"city": "Rocklin",
+"lat": 38.819728,
+"lng": -121.292312,
+"size": 0.006
+},
+{
+"id": "woodbury-university",
+"name": "Woodbury University",
+"short": "Woodbury",
+"kind": "private",
+"city": "Burbank",
+"lat": 34.209226,
+"lng": -118.340692,
+"size": 0.006
+},
+{
+"id": "allan-hancock-college",
+"name": "Allan Hancock College",
+"short": "Allan Hancock",
+"kind": "cc",
+"city": "Santa Maria",
+"lat": 34.943716,
+"lng": -120.421144,
+"size": 0.006
+},
+{
+"id": "american-river-college",
+"name": "American River College",
+"short": "ARC",
+"kind": "cc",
+"city": "Sacramento",
+"lat": 38.65085,
+"lng": -121.349672,
+"size": 0.006
+},
+{
+"id": "antelope-valley-college",
+"name": "Antelope Valley College",
+"short": "Antelope Valley",
+"kind": "cc",
+"city": "Lancaster",
+"lat": 34.676207,
+"lng": -118.186166,
+"size": 0.006
+},
+{
+"id": "bakersfield-college",
+"name": "Bakersfield College",
+"short": "Bakersfield",
+"kind": "cc",
+"city": "Bakersfield",
+"lat": 35.40911,
+"lng": -118.973753,
+"size": 0.006
+},
+{
+"id": "barstow-college",
+"name": "Barstow College",
+"short": "Barstow",
+"kind": "cc",
+"city": "Barstow",
+"lat": 34.870285,
+"lng": -117.023412,
+"size": 0.006
+},
+{
+"id": "berkeley-city-college",
+"name": "Berkeley City College",
+"short": "Berkeley City",
+"kind": "cc",
+"city": "Berkeley",
+"lat": 37.869769,
+"lng": -122.269877,
+"size": 0.006
+},
+{
+"id": "butte-college",
+"name": "Butte College",
+"short": "Butte",
+"kind": "cc",
+"city": "Oroville",
+"lat": 39.649782,
+"lng": -121.644831,
+"size": 0.006
+},
+{
+"id": "cabrillo-college",
+"name": "Cabrillo College",
+"short": "Cabrillo",
+"kind": "cc",
+"city": "Aptos",
+"lat": 36.989448,
+"lng": -121.924797,
+"size": 0.006
+},
+{
+"id": "canada-college",
+"name": "Cañada College",
+"short": "Cañada",
+"kind": "cc",
+"city": "Redwood City",
+"lat": 37.44877,
+"lng": -122.265398,
+"size": 0.006
+},
+{
+"id": "cerritos-college",
+"name": "Cerritos College",
+"short": "Cerritos",
+"kind": "cc",
+"city": "Norwalk",
+"lat": 33.886874,
+"lng": -118.097337,
+"size": 0.006
+},
+{
+"id": "cerro-coso-college",
+"name": "Cerro Coso College",
+"short": "Cerro Coso",
+"kind": "cc",
+"city": "Ridgecrest",
+"lat": 35.567525,
+"lng": -117.66767,
+"size": 0.006
+},
+{
+"id": "chabot-college",
+"name": "Chabot College",
+"short": "Chabot",
+"kind": "cc",
+"city": "Hayward",
+"lat": 37.642458,
+"lng": -122.105636,
+"size": 0.006
+},
+{
+"id": "chaffey-college",
+"name": "Chaffey College",
+"short": "Chaffey",
+"kind": "cc",
+"city": "Rancho Cucamonga",
+"lat": 34.147663,
+"lng": -117.573932,
+"size": 0.006
+},
+{
+"id": "citrus-college",
+"name": "Citrus College",
+"short": "Citrus",
+"kind": "cc",
+"city": "Glendora",
+"lat": 34.13537,
+"lng": -117.886469,
+"size": 0.006
+},
+{
+"id": "city-college-of-san-francisco",
+"name": "City College of San Francisco",
+"short": "CCSF",
+"kind": "cc",
+"city": "San Francisco",
+"lat": 37.725953,
+"lng": -122.451155,
+"size": 0.006
+},
+{
+"id": "clovis-community-college",
+"name": "Clovis Community College",
+"short": "Clovis",
+"kind": "cc",
+"city": "Clovis",
+"lat": 36.8845,
+"lng": -119.729,
+"size": 0.006
+},
+{
+"id": "coastline-community-college",
+"name": "Coastline Community College",
+"short": "Coastline",
+"kind": "cc",
+"city": "Fountain Valley",
+"lat": 33.716054,
+"lng": -117.928979,
+"size": 0.006
+},
+{
+"id": "college-of-alameda",
+"name": "College of Alameda",
+"short": "College of Alameda",
+"kind": "cc",
+"city": "Alameda",
+"lat": 37.781017,
+"lng": -122.279303,
+"size": 0.006
+},
+{
+"id": "college-of-marin",
+"name": "College of Marin",
+"short": "College of Marin",
+"kind": "cc",
+"city": "Kentfield",
+"lat": 37.951918,
+"lng": -122.548758,
+"size": 0.006
+},
+{
+"id": "college-of-san-mateo",
+"name": "College of San Mateo",
+"short": "College of San Mateo",
+"kind": "cc",
+"city": "San Mateo",
+"lat": 37.535698,
+"lng": -122.334801,
+"size": 0.006
+},
+{
+"id": "college-of-the-canyons",
+"name": "College of the Canyons",
+"short": "College of the Canyons",
+"kind": "cc",
+"city": "Santa Clarita",
+"lat": 34.403993,
+"lng": -118.568698,
+"size": 0.006
+},
+{
+"id": "college-of-the-desert",
+"name": "College of the Desert",
+"short": "College of the Desert",
+"kind": "cc",
+"city": "Palm Desert",
+"lat": 33.732108,
+"lng": -116.388271,
+"size": 0.006
+},
+{
+"id": "college-of-the-redwoods",
+"name": "College of the Redwoods",
+"short": "College of the Redwoods",
+"kind": "cc",
+"city": "Eureka",
+"lat": 40.698427,
+"lng": -124.195293,
+"size": 0.006
+},
+{
+"id": "college-of-the-sequoias",
+"name": "College of the Sequoias",
+"short": "College of the Sequoias",
+"kind": "cc",
+"city": "Visalia",
+"lat": 36.323877,
+"lng": -119.315182,
+"size": 0.006
+},
+{
+"id": "college-of-the-siskiyous",
+"name": "College of the Siskiyous",
+"short": "College of the Siskiyous",
+"kind": "cc",
+"city": "Weed",
+"lat": 41.413005,
+"lng": -122.38909,
+"size": 0.006
+},
+{
+"id": "columbia-college",
+"name": "Columbia College",
+"short": "Columbia",
+"kind": "cc",
+"city": "Sonora",
+"lat": 38.030367,
+"lng": -120.388385,
+"size": 0.006
+},
+{
+"id": "compton-college",
+"name": "Compton College",
+"short": "Compton",
+"kind": "cc",
+"city": "Compton",
+"lat": 33.878226,
+"lng": -118.209463,
+"size": 0.006
+},
+{
+"id": "contra-costa-college",
+"name": "Contra Costa College",
+"short": "Contra Costa",
+"kind": "cc",
+"city": "San Pablo",
+"lat": 37.969381,
+"lng": -122.337377,
+"size": 0.006
+},
+{
+"id": "copper-mountain-community-college",
+"name": "Copper Mountain Community College",
+"short": "Copper Mountain",
+"kind": "cc",
+"city": "Joshua Tree",
+"lat": 34.140464,
+"lng": -116.213939,
+"size": 0.006
+},
+{
+"id": "cosumnes-river-college",
+"name": "Cosumnes River College",
+"short": "Cosumnes River",
+"kind": "cc",
+"city": "Sacramento",
+"lat": 38.45295,
+"lng": -121.423108,
+"size": 0.006
+},
+{
+"id": "crafton-hills-college",
+"name": "Crafton Hills College",
+"short": "Crafton Hills",
+"kind": "cc",
+"city": "Yucaipa",
+"lat": 34.039178,
+"lng": -117.101173,
+"size": 0.006
+},
+{
+"id": "cuesta-college",
+"name": "Cuesta College",
+"short": "Cuesta",
+"kind": "cc",
+"city": "San Luis Obispo",
+"lat": 35.331276,
+"lng": -120.742235,
+"size": 0.006
+},
+{
+"id": "cuyamaca-college",
+"name": "Cuyamaca College",
+"short": "Cuyamaca",
+"kind": "cc",
+"city": "El Cajon",
+"lat": 32.744305,
+"lng": -116.942854,
+"size": 0.006
+},
+{
+"id": "cypress-college",
+"name": "Cypress College",
+"short": "Cypress",
+"kind": "cc",
+"city": "Cypress",
+"lat": 33.82833,
+"lng": -118.025143,
+"size": 0.006
+},
+{
+"id": "de-anza-college",
+"name": "De Anza College",
+"short": "De Anza",
+"kind": "cc",
+"city": "Cupertino",
+"lat": 37.319914,
+"lng": -122.045783,
+"size": 0.006
+},
+{
+"id": "diablo-valley-college",
+"name": "Diablo Valley College",
+"short": "DVC",
+"kind": "cc",
+"city": "Pleasant Hill",
+"lat": 37.968516,
+"lng": -122.073142,
+"size": 0.006
+},
+{
+"id": "east-los-angeles-college",
+"name": "East Los Angeles College",
+"short": "ELAC",
+"kind": "cc",
+"city": "Monterey Park",
+"lat": 34.040531,
+"lng": -118.148785,
+"size": 0.006
+},
+{
+"id": "el-camino-college",
+"name": "El Camino College",
+"short": "El Camino",
+"kind": "cc",
+"city": "Torrance",
+"lat": 33.885229,
+"lng": -118.329913,
+"size": 0.006
+},
+{
+"id": "evergreen-valley-college",
+"name": "Evergreen Valley College",
+"short": "Evergreen Valley",
+"kind": "cc",
+"city": "San Jose",
+"lat": 37.30167,
+"lng": -121.76561,
+"size": 0.006
+},
+{
+"id": "feather-river-college",
+"name": "Feather River College",
+"short": "Feather River",
+"kind": "cc",
+"city": "Quincy",
+"lat": 39.953101,
+"lng": -120.973067,
+"size": 0.006
+},
+{
+"id": "folsom-lake-college",
+"name": "Folsom Lake College",
+"short": "Folsom Lake",
+"kind": "cc",
+"city": "Folsom",
+"lat": 38.661372,
+"lng": -121.127486,
+"size": 0.006
+},
+{
+"id": "foothill-college",
+"name": "Foothill College",
+"short": "Foothill",
+"kind": "cc",
+"city": "Los Altos Hills",
+"lat": 37.361655,
+"lng": -122.127964,
+"size": 0.006
+},
+{
+"id": "fresno-city-college",
+"name": "Fresno City College",
+"short": "FCC",
+"kind": "cc",
+"city": "Fresno",
+"lat": 36.768164,
+"lng": -119.796096,
+"size": 0.006
+},
+{
+"id": "fullerton-college",
+"name": "Fullerton College",
+"short": "Fullerton",
+"kind": "cc",
+"city": "Fullerton",
+"lat": 33.875514,
+"lng": -117.918255,
+"size": 0.006
+},
+{
+"id": "gavilan-college",
+"name": "Gavilan College",
+"short": "Gavilan",
+"kind": "cc",
+"city": "Gilroy",
+"lat": 36.972627,
+"lng": -121.569842,
+"size": 0.006
+},
+{
+"id": "glendale-community-college",
+"name": "Glendale Community College",
+"short": "Glendale",
+"kind": "cc",
+"city": "Glendale",
+"lat": 34.16745,
+"lng": -118.227666,
+"size": 0.006
+},
+{
+"id": "golden-west-college",
+"name": "Golden West College",
+"short": "Golden West",
+"kind": "cc",
+"city": "Huntington Beach",
+"lat": 33.732531,
+"lng": -118.002568,
+"size": 0.006
+},
+{
+"id": "grossmont-college",
+"name": "Grossmont College",
+"short": "Grossmont",
+"kind": "cc",
+"city": "El Cajon",
+"lat": 32.815246,
+"lng": -117.006277,
+"size": 0.006
+},
+{
+"id": "hartnell-college",
+"name": "Hartnell College",
+"short": "Hartnell",
+"kind": "cc",
+"city": "Salinas",
+"lat": 36.675091,
+"lng": -121.666054,
+"size": 0.006
+},
+{
+"id": "imperial-valley-college",
+"name": "Imperial Valley College",
+"short": "Imperial Valley",
+"kind": "cc",
+"city": "Imperial",
+"lat": 32.827209,
+"lng": -115.503563,
+"size": 0.006
+},
+{
+"id": "irvine-valley-college",
+"name": "Irvine Valley College",
+"short": "Irvine Valley",
+"kind": "cc",
+"city": "Irvine",
+"lat": 33.675381,
+"lng": -117.777539,
+"size": 0.006
+},
+{
+"id": "lake-tahoe-community-college",
+"name": "Lake Tahoe Community College",
+"short": "Lake Tahoe",
+"kind": "cc",
+"city": "South Lake Tahoe",
+"lat": 38.926797,
+"lng": -119.972574,
+"size": 0.006
+},
+{
+"id": "laney-college",
+"name": "Laney College",
+"short": "Laney",
+"kind": "cc",
+"city": "Oakland",
+"lat": 37.797257,
+"lng": -122.26283,
+"size": 0.006
+},
+{
+"id": "las-positas-college",
+"name": "Las Positas College",
+"short": "Las Positas",
+"kind": "cc",
+"city": "Livermore",
+"lat": 37.710873,
+"lng": -121.80058,
+"size": 0.006
+},
+{
+"id": "lassen-community-college",
+"name": "Lassen Community College",
+"short": "Lassen",
+"kind": "cc",
+"city": "Susanville",
+"lat": 40.432053,
+"lng": -120.633271,
+"size": 0.006
+},
+{
+"id": "long-beach-city-college",
+"name": "Long Beach City College",
+"short": "LBCC",
+"kind": "cc",
+"city": "Long Beach",
+"lat": 33.833593,
+"lng": -118.135633,
+"size": 0.006
+},
+{
+"id": "los-angeles-city-college",
+"name": "Los Angeles City College",
+"short": "LACC",
+"kind": "cc",
+"city": "Los Angeles",
+"lat": 34.087301,
+"lng": -118.292169,
+"size": 0.006
+},
+{
+"id": "los-angeles-harbor-college",
+"name": "Los Angeles Harbor College",
+"short": "Los Angeles Harbor",
+"kind": "cc",
+"city": "Wilmington",
+"lat": 33.785825,
+"lng": -118.283549,
+"size": 0.006
+},
+{
+"id": "los-angeles-mission-college",
+"name": "Los Angeles Mission College",
+"short": "Los Angeles Mission",
+"kind": "cc",
+"city": "Sylmar",
+"lat": 34.314668,
+"lng": -118.4195,
+"size": 0.006
+},
+{
+"id": "los-angeles-pierce-college",
+"name": "Los Angeles Pierce College",
+"short": "Los Angeles Pierce",
+"kind": "cc",
+"city": "Woodland Hills",
+"lat": 34.183949,
+"lng": -118.575071,
+"size": 0.006
+},
+{
+"id": "los-angeles-southwest-college",
+"name": "Los Angeles Southwest College",
+"short": "Los Angeles Southwest",
+"kind": "cc",
+"city": "Los Angeles",
+"lat": 33.929586,
+"lng": -118.304674,
+"size": 0.006
+},
+{
+"id": "los-angeles-trade-technical-college",
+"name": "Los Angeles Trade Technical College",
+"short": "Los Angeles Trade Technical",
+"kind": "cc",
+"city": "Los Angeles",
+"lat": 34.031907,
+"lng": -118.269447,
+"size": 0.006
+},
+{
+"id": "los-angeles-valley-college",
+"name": "Los Angeles Valley College",
+"short": "Los Angeles Valley",
+"kind": "cc",
+"city": "Valley Glen",
+"lat": 34.175165,
+"lng": -118.421734,
+"size": 0.006
+},
+{
+"id": "los-medanos-college",
+"name": "Los Medanos College",
+"short": "Los Medanos",
+"kind": "cc",
+"city": "Pittsburg",
+"lat": 38.006474,
+"lng": -121.860967,
+"size": 0.006
+},
+{
+"id": "madera-community-college",
+"name": "Madera Community College",
+"short": "Madera",
+"kind": "cc",
+"city": "Madera",
+"lat": 36.945,
+"lng": -120.059,
+"size": 0.006
+},
+{
+"id": "mendocino-college",
+"name": "Mendocino College",
+"short": "Mendocino",
+"kind": "cc",
+"city": "Ukiah",
+"lat": 39.188989,
+"lng": -123.228809,
+"size": 0.006
+},
+{
+"id": "merced-college",
+"name": "Merced College",
+"short": "Merced",
+"kind": "cc",
+"city": "Merced",
+"lat": 37.3353,
+"lng": -120.476464,
+"size": 0.006
+},
+{
+"id": "merritt-college",
+"name": "Merritt College",
+"short": "Merritt",
+"kind": "cc",
+"city": "Oakland",
+"lat": 37.789088,
+"lng": -122.167335,
+"size": 0.006
+},
+{
+"id": "miracosta-college",
+"name": "MiraCosta College",
+"short": "MiraCosta",
+"kind": "cc",
+"city": "Oceanside",
+"lat": 33.190483,
+"lng": -117.302606,
+"size": 0.006
+},
+{
+"id": "mission-college",
+"name": "Mission College",
+"short": "Mission",
+"kind": "cc",
+"city": "Santa Clara",
+"lat": 37.391935,
+"lng": -121.980783,
+"size": 0.006
+},
+{
+"id": "modesto-junior-college",
+"name": "Modesto Junior College",
+"short": "MJC",
+"kind": "cc",
+"city": "Modesto",
+"lat": 37.651056,
+"lng": -121.009792,
+"size": 0.006
+},
+{
+"id": "monterey-peninsula-college",
+"name": "Monterey Peninsula College",
+"short": "Monterey Peninsula",
+"kind": "cc",
+"city": "Monterey",
+"lat": 36.590558,
+"lng": -121.884931,
+"size": 0.006
+},
+{
+"id": "moorpark-college",
+"name": "Moorpark College",
+"short": "Moorpark",
+"kind": "cc",
+"city": "Moorpark",
+"lat": 34.301146,
+"lng": -118.834528,
+"size": 0.006
+},
+{
+"id": "moreno-valley-college",
+"name": "Moreno Valley College",
+"short": "Moreno Valley",
+"kind": "cc",
+"city": "Moreno Valley",
+"lat": 33.88744,
+"lng": -117.20271,
+"size": 0.006
+},
+{
+"id": "mt-san-antonio-college",
+"name": "Mt. San Antonio College",
+"short": "Mt. SAC",
+"kind": "cc",
+"city": "Walnut",
+"lat": 34.047764,
+"lng": -117.846629,
+"size": 0.006
+},
+{
+"id": "mt-san-jacinto-college",
+"name": "Mt. San Jacinto College",
+"short": "Mt. San Jacinto",
+"kind": "cc",
+"city": "San Jacinto",
+"lat": 33.806748,
+"lng": -116.971169,
+"size": 0.006
+},
+{
+"id": "napa-valley-college",
+"name": "Napa Valley College",
+"short": "Napa Valley",
+"kind": "cc",
+"city": "Napa",
+"lat": 38.274081,
+"lng": -122.274381,
+"size": 0.006
+},
+{
+"id": "norco-college",
+"name": "Norco College",
+"short": "Norco",
+"kind": "cc",
+"city": "Norco",
+"lat": 33.917387,
+"lng": -117.570212,
+"size": 0.006
+},
+{
+"id": "ohlone-college",
+"name": "Ohlone College",
+"short": "Ohlone",
+"kind": "cc",
+"city": "Fremont",
+"lat": 37.529931,
+"lng": -121.911795,
+"size": 0.006
+},
+{
+"id": "orange-coast-college",
+"name": "Orange Coast College",
+"short": "OCC",
+"kind": "cc",
+"city": "Costa Mesa",
+"lat": 33.66927,
+"lng": -117.909086,
+"size": 0.006
+},
+{
+"id": "oxnard-college",
+"name": "Oxnard College",
+"short": "Oxnard",
+"kind": "cc",
+"city": "Oxnard",
+"lat": 34.166104,
+"lng": -119.157604,
+"size": 0.006
+},
+{
+"id": "palo-verde-college",
+"name": "Palo Verde College",
+"short": "Palo Verde",
+"kind": "cc",
+"city": "Blythe",
+"lat": 33.661538,
+"lng": -114.651698,
+"size": 0.006
+},
+{
+"id": "palomar-college",
+"name": "Palomar College",
+"short": "Palomar",
+"kind": "cc",
+"city": "San Marcos",
+"lat": 33.149483,
+"lng": -117.183978,
+"size": 0.006
+},
+{
+"id": "pasadena-city-college",
+"name": "Pasadena City College",
+"short": "PCC",
+"kind": "cc",
+"city": "Pasadena",
+"lat": 34.144552,
+"lng": -118.118196,
+"size": 0.006
+},
+{
+"id": "porterville-college",
+"name": "Porterville College",
+"short": "Porterville",
+"kind": "cc",
+"city": "Porterville",
+"lat": 36.049256,
+"lng": -119.014368,
+"size": 0.006
+},
+{
+"id": "reedley-college",
+"name": "Reedley College",
+"short": "Reedley",
+"kind": "cc",
+"city": "Reedley",
+"lat": 36.605428,
+"lng": -119.458555,
+"size": 0.006
+},
+{
+"id": "rio-hondo-college",
+"name": "Rio Hondo College",
+"short": "Rio Hondo",
+"kind": "cc",
+"city": "Whittier",
+"lat": 34.019821,
+"lng": -118.033506,
+"size": 0.006
+},
+{
+"id": "riverside-city-college",
+"name": "Riverside City College",
+"short": "RCC",
+"kind": "cc",
+"city": "Riverside",
+"lat": 33.970918,
+"lng": -117.384323,
+"size": 0.006
+},
+{
+"id": "sacramento-city-college",
+"name": "Sacramento City College",
+"short": "SCC",
+"kind": "cc",
+"city": "Sacramento",
+"lat": 38.541096,
+"lng": -121.491139,
+"size": 0.006
+},
+{
+"id": "saddleback-college",
+"name": "Saddleback College",
+"short": "Saddleback",
+"kind": "cc",
+"city": "Mission Viejo",
+"lat": 33.553346,
+"lng": -117.665584,
+"size": 0.006
+},
+{
+"id": "san-bernardino-valley-college",
+"name": "San Bernardino Valley College",
+"short": "San Bernardino Valley",
+"kind": "cc",
+"city": "San Bernardino",
+"lat": 34.086353,
+"lng": -117.313248,
+"size": 0.006
+},
+{
+"id": "san-diego-city-college",
+"name": "San Diego City College",
+"short": "San Diego City",
+"kind": "cc",
+"city": "San Diego",
+"lat": 32.717403,
+"lng": -117.152733,
+"size": 0.006
+},
+{
+"id": "san-diego-mesa-college",
+"name": "San Diego Mesa College",
+"short": "Mesa",
+"kind": "cc",
+"city": "San Diego",
+"lat": 32.803825,
+"lng": -117.169165,
+"size": 0.006
+},
+{
+"id": "san-diego-miramar-college",
+"name": "San Diego Miramar College",
+"short": "San Diego Miramar",
+"kind": "cc",
+"city": "San Diego",
+"lat": 32.909757,
+"lng": -117.120261,
+"size": 0.006
+},
+{
+"id": "san-joaquin-delta-college",
+"name": "San Joaquin Delta College",
+"short": "San Joaquin Delta",
+"kind": "cc",
+"city": "Stockton",
+"lat": 37.995562,
+"lng": -121.317597,
+"size": 0.006
+},
+{
+"id": "san-jose-city-college",
+"name": "San Jose City College",
+"short": "San Jose City",
+"kind": "cc",
+"city": "San Jose",
+"lat": 37.315827,
+"lng": -121.926185,
+"size": 0.006
+},
+{
+"id": "santa-ana-college",
+"name": "Santa Ana College",
+"short": "Santa Ana",
+"kind": "cc",
+"city": "Santa Ana",
+"lat": 33.759309,
+"lng": -117.887558,
+"size": 0.006
+},
+{
+"id": "santa-barbara-city-college",
+"name": "Santa Barbara City College",
+"short": "SBCC",
+"kind": "cc",
+"city": "Santa Barbara",
+"lat": 34.406788,
+"lng": -119.698045,
+"size": 0.006
+},
+{
+"id": "santa-monica-college",
+"name": "Santa Monica College",
+"short": "SMC",
+"kind": "cc",
+"city": "Santa Monica",
+"lat": 34.017022,
+"lng": -118.469765,
+"size": 0.006
+},
+{
+"id": "santa-rosa-junior-college",
+"name": "Santa Rosa Junior College",
+"short": "SRJC",
+"kind": "cc",
+"city": "Santa Rosa",
+"lat": 38.45709,
+"lng": -122.718974,
+"size": 0.006
+},
+{
+"id": "santiago-canyon-college",
+"name": "Santiago Canyon College",
+"short": "Santiago Canyon",
+"kind": "cc",
+"city": "Orange",
+"lat": 33.795449,
+"lng": -117.766762,
+"size": 0.006
+},
+{
+"id": "shasta-college",
+"name": "Shasta College",
+"short": "Shasta",
+"kind": "cc",
+"city": "Redding",
+"lat": 40.625731,
+"lng": -122.317982,
+"size": 0.006
+},
+{
+"id": "sierra-college",
+"name": "Sierra College",
+"short": "Sierra",
+"kind": "cc",
+"city": "Rocklin",
+"lat": 38.790773,
+"lng": -121.211688,
+"size": 0.006
+},
+{
+"id": "skyline-college",
+"name": "Skyline College",
+"short": "Skyline",
+"kind": "cc",
+"city": "San Bruno",
+"lat": 37.63042,
+"lng": -122.467335,
+"size": 0.006
+},
+{
+"id": "solano-college",
+"name": "Solano College",
+"short": "Solano",
+"kind": "cc",
+"city": "Fairfield",
+"lat": 38.235881,
+"lng": -122.122368,
+"size": 0.006
+},
+{
+"id": "southwestern-college",
+"name": "Southwestern College",
+"short": "Southwestern",
+"kind": "cc",
+"city": "Chula Vista",
+"lat": 32.640281,
+"lng": -116.996803,
+"size": 0.006
+},
+{
+"id": "taft-college",
+"name": "Taft College",
+"short": "Taft",
+"kind": "cc",
+"city": "Taft",
+"lat": 35.149343,
+"lng": -119.459751,
+"size": 0.006
+},
+{
+"id": "ventura-college",
+"name": "Ventura College",
+"short": "Ventura",
+"kind": "cc",
+"city": "Ventura",
+"lat": 34.277393,
+"lng": -119.230604,
+"size": 0.006
+},
+{
+"id": "victor-valley-college",
+"name": "Victor Valley College",
+"short": "Victor Valley",
+"kind": "cc",
+"city": "Victorville",
+"lat": 34.472231,
+"lng": -117.261456,
+"size": 0.006
+},
+{
+"id": "west-hills-college-coalinga",
+"name": "West Hills College Coalinga",
+"short": "West Hills Coalinga",
+"kind": "cc",
+"city": "Coalinga",
+"lat": 36.147891,
+"lng": -120.356747,
+"size": 0.006
+},
+{
+"id": "west-hills-college-lemoore",
+"name": "West Hills College Lemoore",
+"short": "West Hills Lemoore",
+"kind": "cc",
+"city": "Lemoore",
+"lat": 36.292431,
+"lng": -119.823866,
+"size": 0.006
+},
+{
+"id": "west-los-angeles-college",
+"name": "West Los Angeles College",
+"short": "West Los Angeles",
+"kind": "cc",
+"city": "Culver City",
+"lat": 34.004512,
+"lng": -118.386664,
+"size": 0.006
+},
+{
+"id": "west-valley-college",
+"name": "West Valley College",
+"short": "West Valley",
+"kind": "cc",
+"city": "Saratoga",
+"lat": 37.26398,
+"lng": -122.008324,
+"size": 0.006
+},
+{
+"id": "woodland-community-college",
+"name": "Woodland Community College",
+"short": "Woodland",
+"kind": "cc",
+"city": "Woodland",
+"lat": 38.660392,
+"lng": -121.73533,
+"size": 0.006
+},
+{
+"id": "yuba-college",
+"name": "Yuba College",
+"short": "Yuba",
+"kind": "cc",
+"city": "Marysville",
+"lat": 39.126536,
+"lng": -121.53964,
+"size": 0.006
+}
+]
