@@ -14,6 +14,7 @@ export const api = {
   },
   forgetMaps: () => mapsCache.clear(),
   today: (campus = cid()) => rpc('get_today', { p_campus: campus }),
+  todayBonus: (campus = cid()) => rpc('get_today_bonus', { p_campus: campus }),
   rounds: (includeScheduled = false, campus = cid()) => rpc('list_rounds', { p_campus: campus, p_include_scheduled: includeScheduled }),
   round: id => rpc('get_round', { p_id: id }),
   guess: (id, pose) => rpc('submit_guess', { p_round: id, p_pos: pose.pos, p_heading: pose.heading }),

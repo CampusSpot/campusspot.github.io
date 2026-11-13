@@ -16,12 +16,15 @@ export function pageHeader(title, { back, sub, actions } = {}) {
 
 export const card = (...children) => h('section', { class: 'card' }, ...children);
 
+/** "Bonus 2×" tag for bonus rounds (null for regular rounds). */
+export const bonusBadge = r => (r?.bonus != null ? h('span', { class: 'badge bonus' }, `Bonus${r.bonus === 1 ? '' : ` ${r.bonus}×`}`) : null);
+
 export function difficultyBadge(key) {
   const d = scoring().difficulties[key];
   return h('span', { class: `badge diff-${key}` }, d ? d.label : key);
 }
 
-export const maxPointsText = difficulty => `max ${points(maxScore(difficulty, scoring()))} pts`;
+export const maxPointsText = (difficulty, bonus = null) => `max ${points(Math.round(maxScore(difficulty, scoring()) * (bonus ?? 1)))} pts`;
 
 /** Photo thumbnail + title + date + difficulty, used in lists. */
 export function roundSummary(r, { extra } = {}) {
@@ -29,7 +32,7 @@ export function roundSummary(r, { extra } = {}) {
     h('img', { class: 'thumb', src: photoUrl(r.photoPath), alt: '', loading: 'lazy' }),
     h('div', { class: 'round-info' },
       h('strong', {}, r.title || (r.date ? formatDate(r.date, session.boot.today) : 'Untitled')),
-      h('span', { class: 'small muted' }, r.title && r.date ? formatDate(r.date, session.boot.today) : null, r.title && r.date ? ' · ' : null, difficultyBadge(r.difficulty)),
+      h('span', { class: 'small muted' }, r.title && r.date ? formatDate(r.date, session.boot.today) : null, r.title && r.date ? ' · ' : null, difficultyBadge(r.difficulty), r.bonus != null ? ' ' : null, bonusBadge(r)),
       extra || null),
   ];
 }

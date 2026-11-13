@@ -1,7 +1,7 @@
 // Results: the answer vs your guess on the map, the points, your rank today, and sharing.
 import { api } from '../api.js';
 import { photoUrl } from '../backend.js';
-import { difficultyBadge, pageHeader } from '../components.js';
+import { bonusBadge, difficultyBadge, pageHeader } from '../components.js';
 import { icon } from '../icons.js';
 import { createMapView } from '../map/index.js';
 import { currentCampus, googleButton, scoring, session } from '../session.js';
@@ -45,7 +45,7 @@ export async function result(root, roundId) {
     view.focus([g.pos, truth.pos]);
     hero.replaceChildren(
       h('div', { class: 'total' }, points(g.total)),
-      h('div', { class: 'muted' }, `of ${points(g.max)} points`, g.multiplier !== 1 ? ` · ×${g.multiplier} ${cfg.difficulties[round.difficulty]?.label || ''} bonus` : ''),
+      h('div', { class: 'muted' }, `of ${points(g.max)} points`, g.multiplier !== 1 ? ` · ×${g.multiplier} ${round.bonus != null && round.bonus !== 1 ? 'bonus round' : `${cfg.difficulties[round.difficulty]?.label || ''} multiplier`}` : ''),
       g.ranked && rank ? h('div', { class: 'rank-pill' }, `#${rank.place} of ${rank.of} today`) : null,
       !g.ranked && !session.user && isToday ? h('div', { class: 'guest-note' }, 'Played as a guest, so this score isn’t saved. ', googleButton('Sign in with Google'), h('div', { class: 'small muted' }, 'Signed-in players get one ranked try a day.')) : null,
       !g.ranked && session.user ? h('div', { class: 'small muted' }, isToday ? 'Not ranked: you made this round.' : 'Practice round · not on the leaderboard') : null,
@@ -83,7 +83,7 @@ export async function result(root, roundId) {
 
   root.append(
     pageHeader(isToday ? 'Today’s result' : 'Practice result', { back: isToday ? '#/' : '#/archive',
-      sub: [round.title || formatDate(round.date, session.boot.today), ' · ', difficultyBadge(round.difficulty)] }),
+      sub: [round.title || formatDate(round.date, session.boot.today), ' · ', difficultyBadge(round.difficulty), ' ', bonusBadge(round)] }),
     hero,
     box,
     h('div', { class: 'legend' },

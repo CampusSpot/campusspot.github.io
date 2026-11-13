@@ -2,7 +2,7 @@
 // Today's round needs a signed-in player with a name and allows one try; past rounds are practice.
 import { api } from '../api.js';
 import { photoUrl } from '../backend.js';
-import { difficultyBadge, headingControl, maxPointsText } from '../components.js';
+import { bonusBadge, difficultyBadge, headingControl, maxPointsText } from '../components.js';
 import { icon } from '../icons.js';
 import { createMapView } from '../map/index.js';
 import { ensureName, session } from '../session.js';
@@ -36,8 +36,8 @@ export async function play(root, id) {
   const info = h('div', { class: 'overlay-top' },
     h('a', { class: 'icon-btn', href: isToday ? '#/' : '#/archive', 'aria-label': 'Leave round' }, icon('x')),
     h('div', { class: 'overlay-info' },
-      h('strong', {}, round.title || (isToday ? 'Today’s round' : formatDate(round.date, session.boot.today))), ' ', difficultyBadge(round.difficulty),
-      h('div', { class: 'small' }, isToday && !guest ? `${maxPointsText(round.difficulty)} · one try` : isToday ? 'Playing as a guest · not saved' : 'Practice round · not on the leaderboard')));
+      h('strong', {}, round.title || (round.bonus != null ? 'Bonus round' : isToday ? 'Today’s round' : formatDate(round.date, session.boot.today))), ' ', difficultyBadge(round.difficulty), ' ', bonusBadge(round),
+      h('div', { class: 'small' }, isToday && !guest ? `${maxPointsText(round.difficulty, round.bonus)} · one try` : isToday ? 'Playing as a guest · not saved' : 'Practice round · not on the leaderboard')));
   const photoPane = h('section', { class: 'pane photo-pane' }, scroller, info,
     h('div', { class: 'overlay-bottom' },
       h('span', { class: 'small hint-light' }, icon('zoom', { size: 16 }), ' Tap photo to zoom'),

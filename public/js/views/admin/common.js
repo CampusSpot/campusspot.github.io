@@ -59,7 +59,7 @@ export function addDays(ymd, n) {
 
 /** First day from `from` onward that has no round yet. */
 export function nextFreeDate(rounds, from) {
-  const taken = new Set(rounds.map(r => r.date));
+  const taken = new Set(rounds.filter(r => r.bonus == null).map(r => r.date));
   let d = from;
   while (taken.has(d)) d = addDays(d, 1);
   return d;

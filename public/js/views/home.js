@@ -19,7 +19,7 @@ const longDate = ymd => {
 };
 
 export async function home(root) {
-  const [today, board] = await Promise.all([api.today(), api.leaderboardRound().catch(() => ({ rows: [] }))]);
+  const [today, board, bonus] = await Promise.all([api.today(), api.leaderboardRound().catch(() => ({ rows: [] })), api.todayBonus().catch(() => [])]);
   const next = countdown();
   const signedIn = !!session.user;
   const played = today?.mine?.played;
@@ -62,6 +62,7 @@ export async function home(root) {
 
   root.append(
     hero,
+    ...bonus.map(bonusCard),
     h('p', { class: 'next-round' }, 'Next photo in ', next.el),
     h('section', { class: 'card' },
       h('div', { class: 'section-head' }, h('h2', {}, `Today’s top 5 at ${campus.short}`), h('a', { href: '#/leaderboard' }, 'Leaderboard')),
@@ -70,6 +71,18 @@ export async function home(root) {
     phoneCard(),
     footer());
   return () => next.stop();
+}
+
+/** An extra round today, with its points multiplier. */
+function bonusCard(r) {
+  const played = r.mine?.played;
+  return h('section', { class: 'card bonus-card' },
+    h('img', { class: 'thumb', src: photoUrl(r.photoPath), alt: '' }),
+    h('div', { class: 'grow' },
+      h('p', { class: 'overline' }, r.bonus === 1 ? 'Bonus round' : `Bonus round · ${r.bonus}× points`),
+      h('strong', {}, r.title || 'One more for today'),
+      h('div', { class: 'small muted' }, played ? `You scored ${points(r.mine.best)}` : `${scoring().difficulties[r.difficulty]?.label || ''} · ${maxPointsText(r.difficulty, r.bonus)}`)),
+    played ? btn('Result', { href: `#/result/${r.id}`, class: 'small' }) : btn('Play', { href: `#/play/${r.id}`, class: 'primary small' }));
 }
 
 /** In local mode on the computer itself: how to open this on a phone. */

@@ -65,6 +65,10 @@ do $$ begin
   alter table public.rounds add constraint rounds_published_have_date check (status <> 'published' or release_date is not null);
 exception when duplicate_object then null; end $$;
 create index if not exists rounds_release_date on public.rounds (release_date desc);
+-- Bonus rounds: an extra round on a day that already has its regular one. Its score is multiplied
+-- by bonus_multiplier. null = the regular round of the day.
+alter table public.rounds add column if not exists bonus_multiplier numeric
+  check (bonus_multiplier is null or bonus_multiplier in (1, 1.5, 2, 3));
 -- Each map (and so each round) belongs to one campus. Older single-campus maps are assigned to
 -- Cal Poly Pomona by the setup script.
 alter table public.maps add column if not exists campus_id text references public.campuses(id);
@@ -219,7 +223,8 @@ create or replace function public.next_free_date(p_campus text) returns date
 language sql stable security definer set search_path = public as $$
   select min(d)::date from generate_series(public.today_local(), public.today_local() + 3650, interval '1 day') d
   where not exists (select 1 from rounds r join maps m on m.id = r.map_id
-                    where m.campus_id = p_campus and r.status = 'published' and r.release_date = d::date)
+                    where m.campus_id = p_campus and r.status = 'published' and r.release_date = d::date
+                      and r.bonus_multiplier is null)
 $$;
 
 create or replace function public.assert_signed_in() returns uuid
@@ -301,7 +306,7 @@ end $$;
 create or replace function public.round_json(r public.rounds) returns jsonb
 language sql stable security definer set search_path = public as $$
   select jsonb_build_object(
-    'id', r.id, 'mapId', r.map_id, 'campusId', public.round_campus(r), 'title', r.title, 'difficulty', r.difficulty, 'status', r.status,
+    'id', r.id, 'mapId', r.map_id, 'campusId', public.round_campus(r), 'title', r.title, 'bonus', r.bonus_multiplier, 'difficulty', r.difficulty, 'status', r.status,
     'date', to_char(r.release_date, 'YYYY-MM-DD'), 'photoPath', r.photo_path, 'createdAt', r.created_at,
     'plays', (select count(*) from guesses g where g.round_id = r.id and g.ranked),
     'mine', (select jsonb_build_object('played', true, 'best', max(g.total))
@@ -398,12 +403,21 @@ language sql stable security definer set search_path = public as $$
   select coalesce(jsonb_agg(public.campus_json(c) order by c.name), '[]'::jsonb) from campuses c
 $$;
 
--- Today's round at a campus.
+-- Today's regular round at a campus.
 create or replace function public.get_today(p_campus text) returns jsonb
 language sql stable security definer set search_path = public as $$
   select public.round_json(r) from rounds r join maps m on m.id = r.map_id
   where m.campus_id = p_campus and r.status = 'published' and r.release_date = public.today_local()
+    and r.bonus_multiplier is null
   order by r.created_at desc limit 1
+$$;
+
+-- Today's bonus rounds at a campus, oldest first.
+create or replace function public.get_today_bonus(p_campus text) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_agg(public.round_json(r) order by r.created_at), '[]'::jsonb) from rounds r join maps m on m.id = r.map_id
+  where m.campus_id = p_campus and r.status = 'published' and r.release_date = public.today_local()
+    and r.bonus_multiplier is not null
 $$;
 
 -- A campus's released rounds, newest first (admins: pass true to include scheduled ones).
@@ -459,6 +473,12 @@ begin
   end if;
 
   s := public.score_guess(m, r.difficulty, a.pos, a.heading, pos, heading, public.setting('scoring'));
+  if r.bonus_multiplier is not null then
+    s := s || jsonb_build_object(
+      'multiplier', (s->>'multiplier')::float8 * r.bonus_multiplier,
+      'total', floor((s->>'total')::float8 * r.bonus_multiplier + 0.5)::int,
+      'max', floor((s->>'max')::float8 * r.bonus_multiplier + 0.5)::int);
+  end if;
 
   if uid is null then
     -- guest practice: scored, not stored
@@ -661,13 +681,25 @@ begin
   return m;
 end $$;
 
+-- A bonus multiplier from the app: null (regular round) or one of the allowed values.
+create or replace function public.check_bonus(v jsonb) returns numeric
+language plpgsql immutable as $$
+begin
+  if v is null or jsonb_typeof(v) = 'null' then return null; end if;
+  if jsonb_typeof(v) <> 'number' or (v #>> '{}')::numeric not in (1, 1.5, 2, 3) then
+    raise exception 'Pick a bonus multiplier' using errcode = '22023';
+  end if;
+  return (v #>> '{}')::numeric;
+end $$;
+
 -- Stores a round and its answer.
 create or replace function public.insert_round(p jsonb, m jsonb, p_status text, p_date date) returns public.rounds
 language plpgsql volatile security definer set search_path = public as $$
 declare r rounds;
 begin
-  insert into rounds (map_id, title, photo_path, difficulty, release_date, created_by, status)
-  values (m->>'id', left(trim(coalesce(p->>'title', '')), 80), p->>'photoPath', p->>'difficulty', p_date, auth.uid(), p_status)
+  insert into rounds (map_id, title, photo_path, difficulty, release_date, created_by, status, bonus_multiplier)
+  values (m->>'id', left(trim(coalesce(p->>'title', '')), 80), p->>'photoPath', p->>'difficulty', p_date, auth.uid(), p_status,
+          case when public.is_admin() then public.check_bonus(p->'bonus') end)
   returning * into r;
   insert into round_answers (round_id, pos, heading)
   values (r.id, public.clamp_pos(m, p#>'{truth,pos}'), public.norm360((p#>>'{truth,heading}')::float8));
@@ -699,7 +731,8 @@ begin
   update rounds set
     title = case when p ? 'title' then left(trim(coalesce(p->>'title', '')), 80) else title end,
     difficulty = case when p ? 'difficulty' then p->>'difficulty' else difficulty end,
-    release_date = case when p ? 'date' then (p->>'date')::date else release_date end
+    release_date = case when p ? 'date' then (p->>'date')::date else release_date end,
+    bonus_multiplier = case when p ? 'bonus' then public.check_bonus(p->'bonus') else bonus_multiplier end
   where id = p_id returning * into r;
   if not found then raise exception 'Round not found' using errcode = 'P0002'; end if;
   return public.round_json(r);
@@ -875,7 +908,7 @@ revoke execute on all functions in schema public from public, anon, authenticate
 
 grant execute on function
   public.is_admin(), public.can_upload(), public.get_bootstrap(), public.get_campuses(), public.get_maps(text), public.get_today(text),
-  public.list_rounds(text, boolean), public.get_round(uuid), public.submit_guess(uuid, jsonb, double precision), public.get_my_result(uuid),
+  public.list_rounds(text, boolean), public.get_today_bonus(text), public.get_round(uuid), public.submit_guess(uuid, jsonb, double precision), public.get_my_result(uuid),
   public.leaderboard_round(uuid, text), public.leaderboard_overall(text, integer)
   to anon, authenticated;
 

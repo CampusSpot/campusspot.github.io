@@ -12,7 +12,7 @@ export async function adminRounds(root) {
   const campus = adminCampus();
   const [rounds, maps] = await Promise.all([api.rounds(true, campus.id), api.maps(campus.id)]);
   const byDate = new Map();
-  for (const r of rounds) if (!byDate.has(r.date)) byDate.set(r.date, r);
+  for (const r of rounds) if (r.bonus == null && !byDate.has(r.date)) byDate.set(r.date, r);
 
   const days = Array.from({ length: 14 }, (_, i) => addDays(today, i));
   const week = h('div', { class: 'schedule' }, days.map(d => {

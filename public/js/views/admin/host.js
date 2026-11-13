@@ -22,7 +22,7 @@ async function roundForm(root, { admin }) {
   const today = session.boot.today;
   const state = {
     photo: null, map: maps.find(m => m.type === 'latlng') || maps[0], pos: null, heading: 0,
-    difficulty: scoring().defaultDifficulty, date: nextFreeDate(rounds, today), title: '',
+    difficulty: scoring().defaultDifficulty, date: nextFreeDate(rounds, today), title: '', bonus: null,
   };
   let view, editor;
 
@@ -68,12 +68,27 @@ async function roundForm(root, { admin }) {
   }
 
   // 3–4. difficulty, date, title
-  const maxText = h('p', { class: 'small muted' }, maxPointsText(state.difficulty));
-  const difficulty = difficultyPicker({ value: state.difficulty, onChange: d => { state.difficulty = d; maxText.textContent = maxPointsText(d); } });
+  const maxText = h('p', { class: 'small muted' });
+  const showMax = () => { maxText.textContent = maxPointsText(state.difficulty, state.bonus); };
+  showMax();
+  const difficulty = difficultyPicker({ value: state.difficulty, onChange: d => { state.difficulty = d; showMax(); } });
+
+  // regular round (takes the day) or a bonus round (extra, on a day that has its regular round)
+  const BONUS = [[null, 'Regular', 'The day’s round'], [1, 'Bonus 1×', 'Extra round, normal points'], [1.5, 'Bonus 1.5×', 'Extra round, 1.5× points'], [2, 'Bonus 2×', 'Extra round, double points'], [3, 'Bonus 3×', 'Extra round, triple points']];
+  const typeBtns = BONUS.map(([value, label, sub]) => h('button', {
+    type: 'button', class: 'type-option', 'aria-pressed': String(value === state.bonus),
+    onclick: () => { if ((value == null) !== (state.bonus == null)) { state.date = value == null ? nextFreeDate(rounds, today) : today; date.value = state.date; } state.bonus = value; typeBtns.forEach((b, i) => b.setAttribute('aria-pressed', String(BONUS[i][0] === value))); showMax(); showTaken(); },
+  }, h('strong', {}, label), h('span', { class: 'small muted' }, sub)));
+  const typeCard = admin ? card(h('h2', {}, 'Round type'), h('div', { class: 'type-options' }, typeBtns),
+    h('p', { class: 'small muted' }, 'Bonus rounds don’t use up a day. Players get one ranked try, and the points count toward the week and all-time boards.')) : null;
   const taken = h('p', { class: 'small muted' });
   const showTaken = () => {
-    const clash = rounds.filter(r => r.date === state.date);
-    taken.textContent = clash.length ? `Heads up: ${formatDate(state.date, today)} already has a round. The newest one is shown that day.` : '';
+    const regular = rounds.filter(r => r.date === state.date && r.bonus == null);
+    const extra = rounds.filter(r => r.date === state.date && r.bonus != null);
+    taken.textContent = state.bonus != null
+      ? (regular.length ? `Joins ${formatDate(state.date, today).replace(/^(Today|Tomorrow|Yesterday)$/, w => w.toLowerCase())}’s round as a bonus.` : `Heads up: ${formatDate(state.date, today)} has no regular round yet.`)
+      : regular.length ? `Heads up: ${formatDate(state.date, today)} already has a round. The newest one is shown that day.`
+        : extra.length ? `${formatDate(state.date, today)} has ${extra.length} bonus round${extra.length === 1 ? '' : 's'}.` : '';
   };
   const date = h('input', { type: 'date', value: state.date, min: today, required: true, oninput: e => { state.date = e.target.value; showTaken(); } });
   const title = h('input', { type: 'text', maxlength: 80, placeholder: 'Optional, e.g. “Near the library”', oninput: e => (state.title = e.target.value) });
@@ -97,7 +112,7 @@ async function roundForm(root, { admin }) {
         mapId: state.map.id, photoPath, truth: { pos: state.pos, heading: state.heading },
         difficulty: state.difficulty, title: state.title,
       };
-      const round = admin ? await api.admin.createRound({ ...input, date: state.date }) : await api.submitRound(input);
+      const round = admin ? await api.admin.createRound({ ...input, date: state.date, bonus: state.bonus }) : await api.submitRound(input);
       done(round);
     } catch (err) {
       if (uploaded) deletePhoto(photoPath).catch(() => {});
@@ -115,6 +130,7 @@ async function roundForm(root, { admin }) {
     root.replaceChildren(...[nav(), pageHeader(admin ? 'Round saved' : 'Submitted for review'), card(
       h('img', { class: 'preview', src: photoUrl(round.photoPath), alt: '' }),
       h('p', {}, !admin ? 'Thanks! An admin will review it. Once approved, it’s scheduled for the next open day.'
+        : round.bonus != null ? (round.date === today ? 'It’s live now as a bonus round.' : `It goes live as a bonus round on ${formatDate(round.date, today)}.`)
         : round.date === today ? 'It’s live now as today’s round.' : `It goes live on ${formatDate(round.date, today)} (campus time).`),
       h('div', { class: 'row wrap' },
         btn(admin ? 'All rounds' : 'Your submissions', { href: back, class: 'primary' }),
@@ -137,6 +153,7 @@ async function roundForm(root, { admin }) {
     box,
     card(h('h2', {}, 'Camera direction'), heading.el),
     card(h('h2', {}, '3. Difficulty'), difficulty.el, maxText),
+    typeCard,
     admin ? card(
       h('h2', {}, '4. Release'),
       h('label', { class: 'field' }, h('span', {}, 'Goes live on (midnight, campus time)'), date),

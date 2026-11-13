@@ -362,3 +362,38 @@ test('campuses: one per player, switching, per-campus rounds and leaderboards, g
   const approved = await db.rpc('admin_approve_round', { p_id: sub.id }, as('admin'));
   assert.notEqual(approved.date, today, 'UCLA already has a round today, so the next free UCLA day');
 });
+
+test('bonus rounds: extra round on a day, multiplied score, no day used up', async () => {
+  const campus = 'csun';
+  const [map] = await db.rpc('get_maps', { p_campus: campus });
+  const spot = { pos: { lat: map.bounds.sw.lat + 0.004, lng: map.bounds.sw.lng + 0.004 }, heading: 45 };
+  const regular = await newRound(today, { mapId: map.id, truth: spot });
+  await rejects(newRound(today, { mapId: map.id, truth: spot, bonus: 5 }), /bonus multiplier/);
+  const bonus = await newRound(today, { mapId: map.id, truth: spot, bonus: 2, title: 'Hard one' });
+  assert.equal(bonus.bonus, 2);
+  assert.equal(regular.bonus, null);
+  assert.equal((await db.rpc('get_today', { p_campus: campus })).id, regular.id, 'the regular round stays today’s round');
+  assert.deepEqual((await db.rpc('get_today_bonus', { p_campus: campus })).map(r => r.id), [bonus.id]);
+
+  // contributors can't make bonus rounds; next free day ignores bonus rounds
+  const tomorrowBonus = await newRound(tomorrow, { mapId: map.id, truth: spot, bonus: 1.5 });
+  assert.equal(tomorrowBonus.bonus, 1.5);
+  const sub = await db.rpc('submit_round', { p: { mapId: map.id, photoPath: `${randomUUID()}.jpg`, difficulty: 'easy', truth: spot, bonus: 3 } }, as('admin'));
+  const approved = await db.rpc('admin_approve_round', { p_id: sub.id }, as('admin'));
+  assert.equal(approved.date, tomorrow, 'tomorrow only has a bonus round, so it is still free');
+
+  // a perfect guess scores double, ranked, and counts on the overall board
+  person('gus', 'gus@example.com'); await db.ensureUser(people.gus.id, 'gus@example.com');
+  await db.rpc('set_display_name', { p_name: 'Gus' }, as('gus'));
+  await db.rpc('join_campus', { p_campus: campus }, as('gus'));
+  const r1 = await db.rpc('submit_guess', { p_round: regular.id, p_pos: spot.pos, p_heading: 45 }, as('gus'));
+  const r2 = await db.rpc('submit_guess', { p_round: bonus.id, p_pos: spot.pos, p_heading: 45 }, as('gus'));
+  assert.equal(r2.guesses[0].ranked, true);
+  assert.equal(r2.guesses[0].total, r1.guesses[0].total * 2);
+  assert.equal(r2.guesses[0].max, r1.guesses[0].max * 2);
+  const again = await db.rpc('submit_guess', { p_round: bonus.id, p_pos: { lat: spot.pos.lat + 0.001, lng: spot.pos.lng }, p_heading: 0 }, as('gus'));
+  assert.equal(again.alreadyPlayed, true, 'one try at a bonus round too');
+  const [top] = await db.rpc('leaderboard_overall', { p_campus: campus });
+  assert.equal(top.total, r1.guesses[0].total * 3);
+  assert.equal((await db.rpc('leaderboard_round', { p_campus: campus })).round.id, regular.id, 'today’s board is the regular round');
+});
