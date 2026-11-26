@@ -31,8 +31,8 @@ export const api = {
   chat: roundId => rpc('get_round_chat', { p_round: roundId }),
   postChat: (roundId, body) => rpc('post_chat_message', { p_round: roundId, p_body: body }),
   deleteChat: id => rpc('delete_chat_message', { p_id: id }),
-  announcements: () => rpc('get_announcements'),
-  announcementsStatus: () => rpc('announcements_status'),
+  announcements: (all = false, campus = cid()) => rpc('get_announcements', { p_campus: campus, p_all: all }),
+  announcementsStatus: (campus = cid()) => rpc('announcements_status', { p_campus: campus }),
   markAnnouncementsRead: upto => rpc('mark_announcements_read', { p_upto: upto }),
 
   admin: {
@@ -50,7 +50,7 @@ export const api = {
     reject: (id, note) => rpc('admin_reject_round', { p_id: id, p_note: note }),
     contributors: () => rpc('admin_contributors'),
     setContributor: (userId, status) => rpc('admin_set_contributor', { p_user: userId, p_status: status }),
-    postAnnouncement: (title, body) => rpc('admin_post_announcement', { p_title: title, p_body: body }),
+    postAnnouncement: (title, body, campus = null) => rpc('admin_post_announcement', { p_title: title, p_body: body, p_campus: campus }),
     deleteAnnouncement: id => rpc('admin_delete_announcement', { p_id: id }),
   },
 };

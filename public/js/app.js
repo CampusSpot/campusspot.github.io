@@ -51,10 +51,10 @@ const routes = [
 }));
 
 const TABS = [
-  { href: '#/', label: 'Today', icon: 'sun', match: p => p === '/' || p.startsWith('/play') || p.startsWith('/result') },
+  // The dot: announcements you haven't read (they're shown on the Today screen itself).
+  { href: '#/', label: 'Today', icon: 'sun', match: p => p === '/' || p === '/news' || p.startsWith('/play') || p.startsWith('/result'), dot: p => p !== '/' && p !== '/news' && hasUnread() },
   { href: '#/leaderboard', label: 'Leaderboard', icon: 'trophy', match: p => p === '/leaderboard' },
   { href: '#/archive', label: 'Archive', icon: 'calendar', match: p => p === '/archive' },
-  { href: '#/news', label: 'News', icon: 'megaphone', match: p => p === '/news', dot: () => hasUnread() },
   { href: '#/admin', label: 'Admin', icon: 'shield', match: p => p.startsWith('/admin'), admin: true },
   { href: '#/account', label: 'You', icon: 'user', match: p => p === '/account' },
 ];
@@ -86,8 +86,8 @@ function renderChrome() {
       h('span', { class: 'chip-name' }, boot.profile?.displayName || 'Choose a name'))
     : mode === 'unconfigured' ? null : googleButton('Sign in'));
   tabbar.replaceChildren(...TABS.filter(t => !t.admin || boot.isAdmin).map(t => {
-    const dot = !t.match(p) && t.dot?.();
-    return h('a', { href: t.href, class: `tab${t.match(p) ? ' active' : ''}`, 'aria-current': t.match(p) ? 'page' : null, 'aria-label': dot ? `${t.label} (new)` : null },
+    const dot = t.dot?.(p);
+    return h('a', { href: t.href, class: `tab${t.match(p) ? ' active' : ''}`, 'aria-current': t.match(p) ? 'page' : null, 'aria-label': dot ? `${t.label} (new announcement)` : null },
       h('span', { class: 'tab-icon' }, icon(t.icon, { size: 22 }), dot ? h('i', { class: 'tab-dot', 'aria-hidden': 'true' }) : null), h('span', {}, t.label));
   }));
 }

@@ -1,9 +1,10 @@
-// Home: today's round, your result, a peek at today's leaderboard, and how to play.
+// Home: today's round, your result, the latest announcements, a peek at today's leaderboard, and how to play.
 import { api } from '../api.js';
 import { localInfo, photoUrl } from '../backend.js';
 import { leaderboardList, maxPointsText } from '../components.js';
 import { currentCampus, googleButton, scoring, session } from '../session.js';
 import { btn, formatDuration, h, msUntilMidnight, points } from '../ui.js';
+import { announcementsCard } from './announcements.js';
 
 function countdown() {
   const el = h('span', {});
@@ -19,7 +20,8 @@ const longDate = ymd => {
 };
 
 export async function home(root) {
-  const [today, board, bonus] = await Promise.all([api.today(), api.leaderboardRound().catch(() => ({ rows: [] })), api.todayBonus().catch(() => [])]);
+  const [today, board, bonus, news] = await Promise.all([api.today(), api.leaderboardRound().catch(() => ({ rows: [] })), api.todayBonus().catch(() => []),
+    api.announcements().catch(err => { console.error(err); return null; })]);
   const next = countdown();
   const signedIn = !!session.user;
   const played = today?.mine?.played;
@@ -63,6 +65,7 @@ export async function home(root) {
   root.append(
     hero,
     ...bonus.map(bonusCard),
+    announcementsCard(news),
     h('p', { class: 'next-round' }, 'Next photo in ', next.el),
     h('section', { class: 'card' },
       h('div', { class: 'section-head' }, h('h2', {}, `Today’s top 5 at ${campus.short}`), h('a', { href: '#/leaderboard' }, 'Leaderboard')),

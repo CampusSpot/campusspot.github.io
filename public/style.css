@@ -453,8 +453,13 @@ textarea:focus { border-color: var(--guess); outline: none; box-shadow: 0 0 0 3p
 .chat-foot { display: grid; gap: 8px; justify-items: start; }
 .chat-foot:empty { display: none; }
 
-/* Announcements */
-.announcements { display: grid; gap: 12px; }
-.announcement.new { border-color: color-mix(in srgb, var(--gold) 55%, var(--line)); }
-.announcement h2 { margin-top: 4px; }
-.announcement-body { margin: 10px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+/* Announcements (Today screen and the full list) */
+.announcements-card .section-head h2 { display: inline-flex; align-items: center; gap: 6px; }
+.announcement-list { display: grid; }
+.announcement { padding: 10px 0; }
+.card.announcement-list .announcement { padding: 12px 0; }
+.announcement + .announcement { border-top: 1px solid var(--line); }
+.announcement.new { box-shadow: inset 3px 0 0 var(--gold); padding-left: 12px; }
+.announcement h3 { margin: 2px 0 0; font-size: 1.2rem; }
+.announcement-body { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.seg:disabled { opacity: 0.5; cursor: default; }

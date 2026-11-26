@@ -130,6 +130,24 @@ test('announcements: only admins post; everyone reads; each account tracks what 
   assert.equal((await db.rpc('get_announcements')).items.length, 1);
 });
 
+test('announcements: for every campus or one campus; admins can list them all', async () => {
+  const other = (await db.rpc('get_campuses')).find(c => c.id !== CPP).id;
+  await rejects(db.rpc('admin_post_announcement', { p_title: 'x', p_body: '', p_campus: 'no-such-campus' }, as('admin')), /needs_campus/);
+  const local = await db.rpc('admin_post_announcement', { p_title: 'CPP only', p_body: '', p_campus: CPP }, as('admin'));
+  assert.equal(local.campusId, CPP);
+  assert.ok(local.campus, 'carries the campus name');
+  await new Promise(r => setTimeout(r, 5));
+  await db.rpc('admin_post_announcement', { p_title: 'Elsewhere', p_body: '', p_campus: other }, as('admin'));
+  const titles = async (campus, who = null, all = false) => (await db.rpc('get_announcements', { p_campus: campus, p_all: all }, as(who))).items.map(a => a.title);
+  assert.deepEqual(await titles(CPP), ['CPP only', 'Welcome'], 'a campus sees its own plus the ones for every campus');
+  assert.deepEqual(await titles(other), ['Elsewhere', 'Welcome']);
+  assert.deepEqual(await titles(null), ['Welcome'], 'no campus: only the ones for every campus');
+  assert.deepEqual(await titles(CPP, 'ana', true), ['CPP only', 'Welcome'], 'only admins can list every campus');
+  assert.deepEqual(await titles(CPP, 'admin', true), ['Elsewhere', 'CPP only', 'Welcome']);
+  const status = await db.rpc('announcements_status', { p_campus: CPP });
+  assert.equal(new Date(status.latest).getTime(), new Date(local.createdAt).getTime(), "another campus's post doesn't make a new dot here");
+});
+
 test('deleting an account removes its chat messages and read marker', async () => {
   await new Promise(r => setTimeout(r, 3100));
   await post('ben', 'bye');

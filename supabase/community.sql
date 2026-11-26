@@ -6,8 +6,9 @@
 -- Guests' guesses aren't stored, so the database can't check that a guest guessed: guests may read
 -- (a guest guess already shows the answer anyway), but only signed-in players can write.
 --
--- Announcements: admins post them; everyone can read them. Each account remembers when it last
--- read them, so the app can show an "unread" dot.
+-- Announcements: admins post them, either for every campus or for one campus. Everyone can read
+-- the ones for all campuses plus their own campus's. Each account remembers when it last read
+-- them, so the app can show an "unread" dot.
 --
 -- Same security model as schema.sql: row-level security ON with no policies, so the tables are only
 -- reachable through the functions below. Safe to run again.
@@ -33,6 +34,9 @@ create table if not exists public.announcements (
   created_at timestamptz not null default now()
 );
 create index if not exists announcements_created on public.announcements (created_at desc);
+-- null = for every campus; otherwise only players of that campus see it.
+alter table public.announcements add column if not exists campus_id text references public.campuses(id) on delete cascade;
+create index if not exists announcements_campus on public.announcements (campus_id, created_at desc);
 
 -- When each player last read the announcements (signed-out players keep this in their browser).
 create table if not exists public.announcement_reads (
@@ -121,25 +125,39 @@ end $$;
 
 -- ── announcements ───────────────────────────────────────────────────────────────────────────────
 
+-- Versions from before announcements could be for one campus (dropped so no old ones linger).
+drop function if exists public.announcements_status();
+drop function if exists public.get_announcements();
+drop function if exists public.admin_post_announcement(text, text);
+
 create or replace function public.announcement_json(a public.announcements) returns jsonb
-language sql stable as $$
-  select jsonb_build_object('id', a.id, 'title', a.title, 'body', a.body, 'createdAt', a.created_at)
+language sql stable security definer set search_path = public as $$
+  select jsonb_build_object('id', a.id, 'title', a.title, 'body', a.body, 'createdAt', a.created_at,
+    'campusId', a.campus_id, 'campus', (select short_name from campuses where id = a.campus_id))
 $$;
 
--- When the newest announcement was posted, and when you last read them (null for guests).
-create or replace function public.announcements_status() returns jsonb
+-- Announcements a player of p_campus sees: the ones for every campus, and that campus's own.
+create or replace function public.announcement_visible(a public.announcements, p_campus text) returns boolean
+language sql stable as $$
+  select a.campus_id is null or a.campus_id = p_campus
+$$;
+
+-- When the newest announcement you'd see was posted, and when you last read them (null for guests).
+create or replace function public.announcements_status(p_campus text default null) returns jsonb
 language sql stable security definer set search_path = public as $$
   select jsonb_build_object(
-    'latest', (select max(created_at) from announcements),
+    'latest', (select max(a.created_at) from announcements a where public.announcement_visible(a, p_campus)),
     'readAt', (select read_at from announcement_reads where user_id = auth.uid()))
 $$;
 
--- The latest 50 announcements, newest first.
-create or replace function public.get_announcements() returns jsonb
+-- The latest 50 announcements for p_campus, newest first. Admins can pass p_all to see every campus's.
+create or replace function public.get_announcements(p_campus text default null, p_all boolean default false) returns jsonb
 language sql stable security definer set search_path = public as $$
-  select public.announcements_status() || jsonb_build_object('items', coalesce((
+  select public.announcements_status(p_campus) || jsonb_build_object('items', coalesce((
     select jsonb_agg(t.j order by t.created_at desc) from (
-      select public.announcement_json(a) as j, a.created_at from announcements a order by a.created_at desc limit 50) t), '[]'::jsonb))
+      select public.announcement_json(a) as j, a.created_at from announcements a
+      where public.announcement_visible(a, p_campus) or (p_all and public.is_admin())
+      order by a.created_at desc limit 50) t), '[]'::jsonb))
 $$;
 
 -- Marks announcements read up to p_upto (the newest one you were shown), so one posted while you
@@ -154,7 +172,8 @@ begin
   on conflict (user_id) do update set read_at = greatest(announcement_reads.read_at, excluded.read_at);
 end $$;
 
-create or replace function public.admin_post_announcement(p_title text, p_body text) returns jsonb
+-- p_campus: null = every campus, or one campus's id.
+create or replace function public.admin_post_announcement(p_title text, p_body text, p_campus text default null) returns jsonb
 language plpgsql volatile security definer set search_path = public as $$
 declare
   clean_title text := trim(regexp_replace(coalesce(p_title, ''), '\s+', ' ', 'g'));
@@ -165,7 +184,8 @@ begin
   if length(clean_title) = 0 then raise exception 'Add a title' using errcode = '22023'; end if;
   if length(clean_title) > 80 then raise exception 'Titles are up to 80 characters' using errcode = '22023'; end if;
   if length(clean_body) > 2000 then raise exception 'Announcements are up to 2,000 characters' using errcode = '22023'; end if;
-  insert into announcements (title, body, created_by) values (clean_title, clean_body, auth.uid()) returning * into a;
+  if p_campus is not null then perform public.assert_campus(p_campus); end if;
+  insert into announcements (title, body, created_by, campus_id) values (clean_title, clean_body, auth.uid(), p_campus) returning * into a;
   return public.announcement_json(a);
 end $$;
 
@@ -183,14 +203,15 @@ revoke all on public.chat_messages, public.announcements, public.announcement_re
 revoke execute on function
   public.can_read_chat(public.rounds), public.chat_message_json(public.chat_messages, public.profiles),
   public.get_round_chat(uuid), public.post_chat_message(uuid, text), public.delete_chat_message(uuid),
-  public.announcement_json(public.announcements), public.announcements_status(), public.get_announcements(),
-  public.mark_announcements_read(timestamptz), public.admin_post_announcement(text, text), public.admin_delete_announcement(uuid)
+  public.announcement_json(public.announcements), public.announcement_visible(public.announcements, text),
+  public.announcements_status(text), public.get_announcements(text, boolean),
+  public.mark_announcements_read(timestamptz), public.admin_post_announcement(text, text, text), public.admin_delete_announcement(uuid)
   from public, anon, authenticated;
 
-grant execute on function public.get_round_chat(uuid), public.announcements_status(), public.get_announcements()
+grant execute on function public.get_round_chat(uuid), public.announcements_status(text), public.get_announcements(text, boolean)
   to anon, authenticated;
 
 grant execute on function
   public.post_chat_message(uuid, text), public.delete_chat_message(uuid), public.mark_announcements_read(timestamptz),
-  public.admin_post_announcement(text, text), public.admin_delete_announcement(uuid)
+  public.admin_post_announcement(text, text, text), public.admin_delete_announcement(uuid)
   to authenticated;

@@ -1,4 +1,4 @@
-// Whether there are announcements you haven't read, for the dot on the News tab. Signed-in players'
+// Whether there are announcements you haven't read, for the dot on the Today tab. Signed-in players'
 // "read up to" time is kept in the database (so it follows them across devices); this browser
 // also remembers it, which is all signed-out players have.
 import { api } from './api.js';

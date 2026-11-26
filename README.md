@@ -14,7 +14,7 @@ A daily photo game for California college campuses. Pick your campus; each day t
 - **Leaderboards** for your campus: today, this week and all time. Other players only see the name you choose (and your class year, if you add it).
 - **Contributors:** players can ask to submit photos of their campus. Admins approve contributors and review every photo before it's scheduled.
 - **Round chat:** once you've guessed, you can read that round's chat; signed-in players can post in it.
-- **Announcements** from the admins, with a dot on the News tab until you've read them.
+- **Announcements** from the admins, for every campus or just one. The latest show on the Today screen, with a dot on the Today tab until you've seen them.
 - **Past rounds** stay open as practice for anyone; they don't count toward the leaderboard.
 
 ## Built with
