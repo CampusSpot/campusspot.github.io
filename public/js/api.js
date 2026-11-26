@@ -1,5 +1,5 @@
 // Every call the app makes to the database, by name. Permissions are enforced by the database
-// functions themselves (see supabase/schema.sql), not here.
+// functions themselves (see supabase/schema.sql and community.sql), not here.
 import { rpc } from './backend.js';
 import { currentCampus } from './session.js';
 
@@ -28,6 +28,12 @@ export const api = {
   requestContributor: note => rpc('request_contributor', { p_note: note }),
   submitRound: round => rpc('submit_round', { p: round }),
   mySubmissions: () => rpc('my_submissions'),
+  chat: roundId => rpc('get_round_chat', { p_round: roundId }),
+  postChat: (roundId, body) => rpc('post_chat_message', { p_round: roundId, p_body: body }),
+  deleteChat: id => rpc('delete_chat_message', { p_id: id }),
+  announcements: (all = false, campus = cid()) => rpc('get_announcements', { p_campus: campus, p_all: all }),
+  announcementsStatus: (campus = cid()) => rpc('announcements_status', { p_campus: campus }),
+  markAnnouncementsRead: upto => rpc('mark_announcements_read', { p_upto: upto }),
 
   admin: {
     saveMap: async map => { const saved = await rpc('admin_save_map', { p_map: map }); mapsCache.clear(); return saved; },
@@ -44,5 +50,7 @@ export const api = {
     reject: (id, note) => rpc('admin_reject_round', { p_id: id, p_note: note }),
     contributors: () => rpc('admin_contributors'),
     setContributor: (userId, status) => rpc('admin_set_contributor', { p_user: userId, p_status: status }),
+    postAnnouncement: (title, body, campus = null) => rpc('admin_post_announcement', { p_title: title, p_body: body, p_campus: campus }),
+    deleteAnnouncement: id => rpc('admin_delete_announcement', { p_id: id }),
   },
 };

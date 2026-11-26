@@ -42,7 +42,7 @@ export async function account(root) {
       btn('Contribute', { icon: 'camera', href: '#/contribute' })),
     h('section', { class: 'card' },
       h('h2', {}, 'Your data'),
-      h('p', { class: 'small muted' }, 'We store your Google account’s email and ID, the name you chose, and your guesses. Deleting your account removes all of it right away.'),
+      h('p', { class: 'small muted' }, 'We store your Google account’s email and ID, the name you chose, your guesses and your chat messages. Deleting your account removes all of it right away.'),
       btn('Delete my account', { icon: 'trash', class: 'danger', onclick: async () => {
         if (!(await confirmDialog('Delete your account?', 'Your name and all your scores will be removed for good. This can’t be undone.', { ok: 'Delete', danger: true }))) return;
         try {

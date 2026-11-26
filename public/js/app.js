@@ -1,6 +1,7 @@
 // App shell (top bar, bottom tabs) and router. Each view renders into a fresh container and may
 // return a cleanup function. Admin pages are hidden from everyone else; the database refuses their
 // actions anyway.
+import { hasUnread, onAnnouncementsChange, refreshAnnouncements } from './announcements.js';
 import { mode } from './backend.js';
 import { icon } from './icons.js';
 import { currentCampus, googleButton, initSession, onSessionChange, session } from './session.js';
@@ -20,6 +21,7 @@ import { contribute } from './views/contribute.js';
 import { adminMaps } from './views/admin/maps.js';
 import { adminPlayers } from './views/admin/players.js';
 import { pickCampus } from './views/pick.js';
+import { announcements } from './views/announcements.js';
 
 const routes = [
   ['/', home],
@@ -29,6 +31,7 @@ const routes = [
   ['/result/:id', result],
   ['/leaderboard', leaderboard],
   ['/archive', archive],
+  ['/news', announcements],
   ['/account', account],
   ['/about', about],
   ['/privacy', privacy],
@@ -48,7 +51,8 @@ const routes = [
 }));
 
 const TABS = [
-  { href: '#/', label: 'Today', icon: 'sun', match: p => p === '/' || p.startsWith('/play') || p.startsWith('/result') },
+  // The dot: announcements you haven't read (they're shown on the Today screen itself).
+  { href: '#/', label: 'Today', icon: 'sun', match: p => p === '/' || p === '/news' || p.startsWith('/play') || p.startsWith('/result'), dot: p => p !== '/' && p !== '/news' && hasUnread() },
   { href: '#/leaderboard', label: 'Leaderboard', icon: 'trophy', match: p => p === '/leaderboard' },
   { href: '#/archive', label: 'Archive', icon: 'calendar', match: p => p === '/archive' },
   { href: '#/admin', label: 'Admin', icon: 'shield', match: p => p.startsWith('/admin'), admin: true },
@@ -81,8 +85,11 @@ function renderChrome() {
       h('span', { class: 'avatar' }, (boot.profile?.displayName || user.email || '?').slice(0, 1).toUpperCase()),
       h('span', { class: 'chip-name' }, boot.profile?.displayName || 'Choose a name'))
     : mode === 'unconfigured' ? null : googleButton('Sign in'));
-  tabbar.replaceChildren(...TABS.filter(t => !t.admin || boot.isAdmin).map(t =>
-    h('a', { href: t.href, class: `tab${t.match(p) ? ' active' : ''}`, 'aria-current': t.match(p) ? 'page' : null }, icon(t.icon, { size: 22 }), h('span', {}, t.label))));
+  tabbar.replaceChildren(...TABS.filter(t => !t.admin || boot.isAdmin).map(t => {
+    const dot = t.dot?.(p);
+    return h('a', { href: t.href, class: `tab${t.match(p) ? ' active' : ''}`, 'aria-current': t.match(p) ? 'page' : null, 'aria-label': dot ? `${t.label} (new announcement)` : null },
+      h('span', { class: 'tab-icon' }, icon(t.icon, { size: 22 }), dot ? h('i', { class: 'tab-dot', 'aria-hidden': 'true' }) : null), h('span', {}, t.label));
+  }));
 }
 
 let cleanup = null;
@@ -131,8 +138,18 @@ const identity = () => `${currentCampus()?.id}|${session.user?.id}|${session.boo
 let lastIdentity = identity();
 onSessionChange(() => {
   const now = identity();
-  if (now !== lastIdentity) { lastIdentity = now; render(); } else renderChrome();
+  if (now !== lastIdentity) { lastIdentity = now; render(); refreshAnnouncements(); } else renderChrome();
+});
+onAnnouncementsChange(() => renderChrome());
+// Look for new announcements when the app comes back to the front, at most every few minutes.
+let checkedAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && mode !== 'unconfigured' && Date.now() - checkedAt > 5 * 60000) { checkedAt = Date.now(); refreshAnnouncements(); }
 });
 window.addEventListener('hashchange', render);
 view.append(loading());
-initSession().catch(err => console.error(err)).finally(() => { lastIdentity = identity(); render(); });
+initSession().catch(err => console.error(err)).finally(() => {
+  lastIdentity = identity();
+  render();
+  if (mode !== 'unconfigured') { checkedAt = Date.now(); refreshAnnouncements(); }
+});

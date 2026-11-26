@@ -1,4 +1,4 @@
-// Results: the answer vs your guess on the map, the points, your rank today, and sharing.
+// Results: the answer vs your guess on the map, the points, your rank today, sharing, and the round's chat.
 import { api } from '../api.js';
 import { photoUrl } from '../backend.js';
 import { bonusBadge, difficultyBadge, pageHeader } from '../components.js';
@@ -7,6 +7,7 @@ import { createMapView } from '../map/index.js';
 import { currentCampus, googleButton, scoring, session } from '../session.js';
 import { formatLength } from '../units.js';
 import { btn, formatDate, formatTime, h, points, toast } from '../ui.js';
+import { roundChat } from './chat.js';
 
 // The latest result, kept in memory so guests (whose practice isn't stored) still see it.
 let last = null;
@@ -81,6 +82,7 @@ export async function result(root, roundId) {
     } catch { /* cancelled */ }
   }
 
+  const chat = roundChat(round);
   root.append(
     pageHeader(isToday ? 'Today’s result' : 'Practice result', { back: isToday ? '#/' : '#/archive',
       sub: [round.title || formatDate(round.date, session.boot.today), ' · ', difficultyBadge(round.difficulty), ' ', bonusBadge(round)] }),
@@ -94,10 +96,11 @@ export async function result(root, roundId) {
       isToday ? btn('Share', { icon: 'share', class: 'primary grow', onclick: share }) : btn('Try again', { href: `#/play/${round.id}`, icon: 'play', class: 'primary grow' }),
       btn('Leaderboard', { href: '#/leaderboard', icon: 'trophy', class: 'grow' }),
       btn('Past rounds', { href: '#/archive', icon: 'calendar', class: 'grow' })),
+    chat.el,
     h('section', { class: 'card' }, h('h2', {}, 'The photo'),
       h('a', { href: photoUrl(round.photoPath), target: '_blank', rel: 'noopener' }, h('img', { class: 'preview', src: photoUrl(round.photoPath), alt: 'Round photo' }))),
     guesses.length > 1 ? h('section', { class: 'card' }, h('h2', {}, `Your tries (${guesses.length})`), history) : null,
   );
   show(current);
-  return () => view.destroy();
+  return () => { chat.stop(); view.destroy(); };
 }

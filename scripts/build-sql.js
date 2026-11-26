@@ -1,5 +1,5 @@
 // Builds supabase/setup.sql (not committed): the one file to paste into Supabase's SQL editor, made
-// from schema.sql, storage.sql, the scoring settings and the campus list.  npm run build:sql
+// from schema.sql, storage.sql, community.sql, the scoring settings and the campus list.  npm run build:sql
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import scoring from '../public/shared/scoring.config.js';
@@ -58,6 +58,7 @@ select set_config('campusspot.admin_emails', 'your.email@gmail.com', false);
 
 ${read('schema.sql')}
 ${read('storage.sql')}
+${read('community.sql')}
 ${seedSql()}
 -- Later, to add or remove an admin, run one of these lines on its own:
 --   insert into public.admins (email) values ('someone@gmail.com');

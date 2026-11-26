@@ -25,6 +25,7 @@ export async function openDb({ dataDir, adminEmails = [] } = {}) {
   const db = dataDir ? new PGlite(dataDir) : new PGlite();
   await db.exec(read('local-auth.sql'));
   await db.exec(read('schema.sql'));
+  await db.exec(read('community.sql'));
   await db.query(`select set_config('campusspot.admin_emails', $1, false)`, [adminEmails.join(',')]);
   await db.exec(seedSql({ adminProviders: ['google', 'dev'] }));
 
